@@ -14,14 +14,14 @@ on:
       acao:
         description: "O que fazer"
         type: choice
-        options: [produzir, teste, aprovar, refazer, descartar, publicado]
+        options: [produzir, teste, instagram, aprovar, refazer, descartar, publicado]
         default: produzir
       id:
         description: "Vídeo (para aprovar, refazer, descartar ou marcar como publicado)"
         required: false
         default: ""
       tema:
-        description: "Tema ou história (opcional, para produzir)"
+        description: "Tema ou história (para produzir) ou segmento do site (para instagram)"
         required: false
         default: ""
       ajuste:
@@ -60,6 +60,8 @@ jobs:
       NOME_CANAL: ${{ vars.NOME_CANAL }}
       GEMINI_MODELO: ${{ vars.GEMINI_MODELO }}
       PAINEL_URL: ${{ vars.PAINEL_URL }}
+      INSTAGRAM_CTA: ${{ vars.INSTAGRAM_CTA }}
+      INSTAGRAM_ARROBA: ${{ vars.INSTAGRAM_ARROBA }}
       YT_ENVIO_AUTOMATICO: ${{ vars.YT_ENVIO_AUTOMATICO }}
       YT_PRIVACIDADE: ${{ vars.YT_PRIVACIDADE }}
       YT_HORARIO: ${{ vars.YT_HORARIO }}
@@ -90,6 +92,8 @@ jobs:
 
       - name: Preparar a fábrica
         if: steps.plano.outputs.producao == 'sim'
+        env:
+          TIPO: ${{ steps.plano.outputs.tipo }}
         run: |
           sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update -qq
@@ -97,6 +101,16 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends fonts-dejavu-core > /dev/null 2>&1 \
             || sudo apt-get install -y -qq --no-install-recommends fonts-dejavu > /dev/null 2>&1 || true
           ffmpeg -hide_banner -version | head -1
+          # Reels do Instagram: o site é gravado por um navegador (o Chrome que já vem no GitHub)
+          if [ "$TIPO" = "instagram" ]; then
+            pip install -q -r requirements-instagram.txt
+            if command -v google-chrome > /dev/null; then
+              echo "CHROME_PATH=$(command -v google-chrome)" >> "$GITHUB_ENV"
+              google-chrome --version
+            else
+              python -m playwright install --with-deps chromium-headless-shell
+            fi
+          fi
 
       # As 8 estações. Os nomes começam com o número da estação: o painel usa isso para
       # mostrar ao vivo em qual estação o vídeo está.

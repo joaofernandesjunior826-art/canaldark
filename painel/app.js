@@ -11,18 +11,38 @@ const ESTACOES = [
   ["7 Thumbnail", "Thumbnail", "capa do vídeo"],
   ["8 Agenda", "Agenda", "fila de aprovação"],
 ];
+// O mesmo trabalho, quando o pedido é um Reels do Instagram (as estações do GitHub são as mesmas)
+const ESTACOES_REELS = [
+  ["1 Pauta", "Pauta", "escolhe o segmento"],
+  ["2 Roteiro", "Conceito", "marca e textos (Gemini)"],
+  ["3 Narração", "Trilha", "batida lo-fi"],
+  ["4 Cenas", "Site", "fotos e páginas"],
+  ["5 Montagem", "Notebook", "cena 3D e final"],
+  ["6 Shorts", "Gravação", "site rolando na tela"],
+  ["7 Thumbnail", "Capa", "capa do Reels"],
+  ["8 Agenda", "Entrega", "prévia e aviso"],
+];
+const SEGMENTOS = [
+  ["💈", "Barbearia"], ["🦷", "Clínica odontológica"], ["🏋️", "Academia"], ["🏠", "Imobiliária"], ["🐾", "Pet shop"],
+  ["🚗", "Estética automotiva"], ["⚖️", "Advocacia"], ["🧁", "Doceria"], ["🍽️", "Restaurante"], ["☕", "Cafeteria"],
+  ["💇", "Salão de beleza"], ["📐", "Arquitetura"], ["🧠", "Psicologia"], ["🗣️", "Escola de idiomas"], ["🍔", "Hamburgueria"],
+  ["💍", "Joalheria"], ["✨", "Clínica de estética"], ["📊", "Contabilidade"], ["🔧", "Oficina mecânica"], ["💐", "Floricultura"],
+  ["💪", "Personal trainer"], ["🏡", "Pousada"], ["📷", "Fotografia"], ["🍕", "Pizzaria"], ["🧘", "Estúdio de yoga"],
+  ["🥗", "Nutricionista"], ["🖋️", "Estúdio de tatuagem"], ["👗", "Loja de roupas"], ["💻", "Coworking"], ["☀️", "Energia solar"],
+];
 const STATUS = {
   aguardando: "Aguardando", aprovado: "Pronto para postar", programado: "Programado",
   publicado: "Publicado", descartado: "Descartado", substituido: "Substituído",
 };
 const ACOES_TEXTO = {
   aprovar: "Aprovando", refazer: "Refazendo", descartar: "Descartando", publicado: "Marcando como publicado",
-  produzir: "Pedindo vídeo novo", teste: "Pedindo vídeo de teste",
+  produzir: "Pedindo vídeo novo", teste: "Pedindo vídeo de teste", instagram: "Pedindo o Reels",
 };
+const STATUS_REELS = { aguardando: "Pronto para postar", publicado: "Postado", descartado: "Descartado", substituido: "Refeito" };
 const LINK_CHAVE = "https://github.com/settings/personal-access-tokens/new?name=Painel%20Clover" +
   "&description=Painel%20da%20F%C3%A1brica%20de%20Shorts&target_name=joaofernandesjunior826-art" +
   "&expires_in=365&actions=write&contents=write";
-const PAGINAS = ["fabrica", "aprovacao", "agenda", "videos", "historias", "config"];
+const PAGINAS = ["fabrica", "aprovacao", "agenda", "videos", "instagram", "historias", "config"];
 
 const ICONES = {
   fabrica: '<path d="M3 20.5V10l5 3.2V10l5 3.2V6.5h3.5V4H20v16.5z"/><path d="M7 17h2m3 0h2m3 0h1"/>',
@@ -30,6 +50,8 @@ const ICONES = {
   agenda: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   videos: '<rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M10.5 9.2v5.6l4.6-2.8z"/>',
   historias: '<path d="M4.5 5.5A2.5 2.5 0 017 3h12.5v15H7a2.5 2.5 0 00-2.5 2.5z"/><path d="M4.5 20.5A2.5 2.5 0 017 18h12.5v3H7"/>',
+  instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="17.1" cy="6.9" r="1" fill="currentColor" stroke="none"/>',
+  surpresa: '<path d="M12 3l1.9 4.6L19 9.5l-4.1 2.9L16 18l-4-3-4 3 1.1-5.6L5 9.5l5.1-1.9z"/>',
   config: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   busca: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
   lua: '<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
@@ -71,6 +93,7 @@ const app = {
   pagina: "fabrica",
   busca: "",
   filtro: "todos",
+  segmento: "",         // segmento escolhido na página Instagram
   pendentes: new Map(), // id do vídeo (ou "fabrica") -> {acao, desde}
   abertos: new Set(),   // cartões com o formulário de refazer aberto
   midias: new Map(),    // asset -> {url, ate}
@@ -148,7 +171,7 @@ function limparPendentes() {
       (p.acao === "publicado" && v && v.status === "publicado") ||
       (p.acao === "refazer" && v && v.status === "substituido");
     if (resolvido || Date.now() - p.desde > 15 * 60 * 1000 ||
-        (["produzir", "teste"].includes(p.acao) && app.dados.execucao.ativa)) app.pendentes.delete(id);
+        (["produzir", "teste", "instagram"].includes(p.acao) && app.dados.execucao.ativa)) app.pendentes.delete(id);
   }
 }
 
@@ -190,7 +213,11 @@ function proximoVideo(horarios) {
   return prox !== undefined ? `hoje às ${prox}h` : `amanhã às ${hs[0]}h`;
 }
 function logo() { return document.documentElement.dataset.tema === "claro" ? "marca-clara.png" : "marca.png"; }
-function videosCom(...status) { return (app.dados?.videos || []).filter((v) => status.includes(v.status)); }
+const ehReels = (v) => v.tipo === "instagram";
+function videosCom(...status) { return (app.dados?.videos || []).filter((v) => !ehReels(v) && status.includes(v.status)); }
+function reels() { return (app.dados?.videos || []).filter(ehReels); }
+function rotuloStatus(v) { return (ehReels(v) ? STATUS_REELS[v.status] : STATUS[v.status]) || v.status; }
+function execucaoEhReels(exec) { return /instagram/i.test((exec && exec.ativa && exec.ativa.titulo) || ""); }
 function previa(v) { return app.dados?.previas?.[v.id] || {}; }
 
 function avisar(texto, erro = false) {
@@ -219,6 +246,7 @@ function desenharBarra() {
   const prontos = videosCom("aprovado").length;
   $("#m-aprovacao").textContent = aguardando || "";
   $("#m-agenda").textContent = prontos || "";
+  $("#m-instagram").textContent = reels().filter((v) => v.status === "aguardando").length || "";
   $("#m-fabrica").classList.toggle("ligado", !!d.execucao.ativa);
   const cfg = d.estado.config || {};
   $("#m-config").classList.toggle("ligado", !cfg.gemini);
@@ -240,7 +268,7 @@ function recolher(sim) {
 function desenhar() {
   desenharBarra();
   if (!app.dados) return;
-  const paginas = { fabrica: pgFabrica, aprovacao: pgAprovacao, agenda: pgAgenda, videos: pgVideos, historias: pgHistorias, config: pgConfig };
+  const paginas = { fabrica: pgFabrica, aprovacao: pgAprovacao, agenda: pgAgenda, videos: pgVideos, instagram: pgInstagram, historias: pgHistorias, config: pgConfig };
   const foco = document.activeElement && document.activeElement.id;
   $("#conteudo").innerHTML = paginas[app.pagina]();
   if (foco && $("#" + foco) && foco !== "busca") $("#" + foco).focus();
@@ -254,7 +282,7 @@ function topo(titulo, sub, direita = "") {
 function estadoDasEstacoes() {
   const exec = app.dados.execucao;
   const passos = new Map((exec.etapas || []).map((e) => [e.nome, e]));
-  return ESTACOES.map(([nome, rotulo, desc], i) => {
+  return (execucaoEhReels(exec) ? ESTACOES_REELS : ESTACOES).map(([nome, rotulo, desc], i) => {
     const p = passos.get(nome);
     let classe = "espera";
     if (p && p.status === "in_progress") classe = "ativa";
@@ -272,7 +300,7 @@ function pgFabrica() {
   const ativa = estacoes.find((e) => e.classe === "ativa");
   const preparando = exec.ativa && !ativa && !estacoes.some((e) => e.classe !== "espera");
   let sub;
-  if (ativa) sub = `Trabalhando na estação <b>${esc(ativa.rotulo)}</b>`;
+  if (ativa) sub = `${execucaoEhReels(exec) ? "Fazendo um <b>Reels do Instagram</b>: estação" : "Trabalhando na estação"} <b>${esc(ativa.rotulo)}</b>`;
   else if (exec.ativa) sub = preparando ? "Lendo os pedidos e preparando as máquinas…" : "Terminando…";
   else sub = `Parada. Próximo vídeo ${proximoVideo(cfg.horarios)}.`;
   const falha = d.estado.ultima_falha;
@@ -292,7 +320,8 @@ function pgFabrica() {
   const pedindo = app.pendentes.get("fabrica");
   const recentes = (exec.recentes || []).slice(0, 5).map((r) => {
     const classe = r.status !== "completed" ? "andamento" : r.conclusao === "success" ? "sucesso" : r.conclusao === "cancelled" || r.conclusao === "skipped" ? "" : "falha";
-    const origem = { schedule: "Agenda automática", push: "Pedido do painel", workflow_dispatch: "Botão do GitHub" }[r.evento] || r.evento;
+    let origem = { schedule: "Agenda automática", push: "Pedido do painel", workflow_dispatch: "Botão do GitHub" }[r.evento] || r.evento;
+    if (/instagram/i.test(r.titulo || "")) origem = "Reels do Instagram";
     const res = r.status !== "completed" ? "em andamento" : r.conclusao === "success" ? "ok" : r.conclusao === "failure" ? "falhou" : r.conclusao;
     return `<a class="lista-item" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="bolinha ${classe}"></span>
       <span class="texto"><b>${esc(origem)}</b><small>${dataCurta(r.inicio)} · ${esc(res)}</small></span>${icone("externo")}</a>`;
@@ -385,16 +414,86 @@ function pgAgenda() {
 function pgVideos() {
   const termo = app.busca.trim().toLowerCase();
   const filtros = ["todos", "aguardando", "aprovado", "programado", "publicado", "descartado"];
-  const lista = app.dados.videos.filter((v) =>
+  const lista = app.dados.videos.filter((v) => !ehReels(v) &&
     (app.filtro === "todos" || v.status === app.filtro) &&
     (!termo || `${v.titulo} ${v.historia} ${v.referencia}`.toLowerCase().includes(termo)));
   const itens = lista.map((v) => `<div class="lista-item" data-acao="assistir" data-id="${v.id}" role="button" style="cursor:pointer">
       <span class="mini">${previa(v).jpg ? `<img data-asset="${previa(v).jpg}" alt="">` : ""}</span>
       <span class="texto"><b>${esc(v.titulo)}</b><small>${esc(v.referencia || "")} · ${dataCurta(v.data)}</small></span>
       <span class="etiqueta ${v.status}">${esc(STATUS[v.status] || v.status)}</span></div>`).join("");
-  return topo("vídeos", `${app.dados.videos.length} vídeo(s) feitos pela fábrica${termo ? ` · busca: “${esc(app.busca)}”` : ""}`) +
+  return topo("vídeos", `${app.dados.videos.filter((v) => !ehReels(v)).length} Short(s) feitos pela fábrica${termo ? ` · busca: “${esc(app.busca)}”` : ""}`) +
     `<div class="filtros">${filtros.map((f) => `<button class="filtro ${app.filtro === f ? "ativo" : ""}" data-acao="filtro" data-filtro="${f}">${f === "todos" ? "Todos" : esc(STATUS[f])}</button>`).join("")}</div>
      <div class="cartao vidro"><div class="lista">${itens || '<p class="sub">Nenhum vídeo por aqui.</p>'}</div></div>`;
+}
+
+/* ---------------- Instagram: Reels com sites-conceito ---------------- */
+function cartaoReels(v) {
+  const p = app.pendentes.get(v.id);
+  const etiqueta = `<span class="etiqueta ${p ? "processando" : v.status === "aguardando" ? "pronto" : v.status}">${p ? "⏳ " + esc(ACOES_TEXTO[p.acao]) : esc(rotuloStatus(v))}</span>`;
+  const meta = [v.segmento, v.duracao_seg ? `${v.duracao_seg} s` : "", dataCurta(v.data)].filter(Boolean).map(esc).join(" · ");
+  const ativo = ["aguardando", "aprovado"].includes(v.status);
+  const acoes = `<button class="botao pequeno" data-acao="baixar" data-id="${v.id}">${icone("baixar")}Baixar</button>
+      <button class="botao pequeno" data-acao="copiar-legenda" data-id="${v.id}">${icone("copiar")}Legenda</button>
+      ${ativo ? `<button class="botao principal pequeno" data-acao="publicado" data-id="${v.id}" ${p ? "disabled" : ""}>${icone("ok")}Já postei</button>` : ""}
+      ${ativo ? `<button class="botao pequeno" data-acao="abrir-refazer" data-id="${v.id}" ${p ? "disabled" : ""} aria-label="Refazer">${icone("refazer")}</button>
+      <button class="botao pequeno perigo" data-acao="descartar" data-id="${v.id}" ${p ? "disabled" : ""} aria-label="Descartar">${icone("lixo")}</button>` : ""}`;
+  const refazer = app.abertos.has(v.id) ? `
+    <form class="refazer-form" data-form="refazer" data-id="${v.id}">
+      <textarea class="campo" name="ajuste" maxlength="500" placeholder="O que mudar? (opcional) Ex.: cores verde e dourado, nome mais curto, tema escuro"></textarea>
+      <div class="linha-acoes"><button class="botao principal pequeno" type="submit">${icone("enviar")}Refazer agora</button>
+      <button class="botao pequeno" type="button" data-acao="fechar-refazer" data-id="${v.id}">Cancelar</button></div>
+    </form>` : "";
+  return `<article class="video-cartao vidro">
+    <div class="capa" data-acao="assistir" data-id="${v.id}" role="button" aria-label="Assistir">
+      ${previa(v).jpg ? `<img data-asset="${previa(v).jpg}" alt="">` : ""}
+      <span class="play">${icone("play")}</span>
+    </div>
+    <div class="video-info">
+      <div class="linha-acoes">${etiqueta}</div>
+      <h3>${esc(v.marca || v.titulo)}</h3>
+      <div class="meta">${meta}</div>
+      ${v.ajuste ? `<div class="meta">✏️ ${esc(v.ajuste)}</div>` : ""}
+      <div class="linha-acoes">${acoes}</div>
+    </div>${refazer}
+  </article>`;
+}
+
+function pgInstagram() {
+  const d = app.dados;
+  const cfg = d.estado.config || {};
+  const todos = reels();
+  const prontos = todos.filter((v) => ["aguardando", "aprovado"].includes(v.status));
+  const postados = todos.filter((v) => v.status === "publicado").slice(0, 12);
+  const pedindo = app.pendentes.get("fabrica");
+  const ocupada = !!d.execucao.ativa && !pedindo;
+  const escolhido = app.segmento || "";
+  const chips = SEGMENTOS.map(([emoji, nome]) =>
+    `<button type="button" class="chip ${escolhido === nome ? "ativo" : ""}" data-acao="segmento" data-segmento="${esc(nome)}">${emoji} ${esc(nome)}</button>`).join("");
+  const andamento = ocupada ? `<p class="sub" style="margin-top:12px">⏳ ${execucaoEhReels(d.execucao) ? "A fábrica está fazendo um Reels agora" : "A fábrica está ocupada com outro vídeo; o seu pedido entra na fila"}. Acompanhe em <a href="#fabrica">Fábrica</a>.</p>` :
+    pedindo ? `<p class="sub" style="margin-top:12px">⏳ ${esc(ACOES_TEXTO[pedindo.acao] || "Pedido enviado")}…</p>` : "";
+  const dicaFotos = !cfg.pixabay && !cfg.pexels ? `<div class="aviso-banner"><b>Dica:</b> com a chave grátis do <b>Pixabay</b>, os sites ganham fotos profissionais do segmento. Cole em <a href="#config">Configurações › Chaves da fábrica</a>.</div>` : "";
+  const dicaGemini = !cfg.gemini ? `<div class="aviso-banner">Sem a chave do Gemini, a fábrica faz um Reels de exemplo (barbearia). Cole a chave em <a href="#config">Configurações</a> para ela criar sites novos.</div>` : "";
+  return topo("instagram", "Reels de 30 s: um site-conceito da Clover rolando no notebook") + dicaGemini + dicaFotos + `
+    <div class="cartao vidro">
+      <h2>Criar um Reels</h2>
+      <p class="sub" style="margin:0 0 12px">Escolha o segmento do site (ou deixe a fábrica escolher). A IA inventa a marca, os textos e as cores.</p>
+      <div class="chips">${chips}</div>
+      <form class="form-reels" data-form="instagram">
+        <input class="campo" name="tema" maxlength="60" placeholder="Ou escreva outro segmento (ex.: loja de vinhos)" value="${esc(SEGMENTOS.some(([, n]) => n === escolhido) ? "" : escolhido)}">
+        <input class="campo" name="ajuste" maxlength="300" placeholder="Algum pedido? (opcional) Ex.: tema escuro, cores verde e dourado">
+        <div class="linha-acoes">
+          <button class="botao principal" type="submit" ${pedindo ? "disabled" : ""}>${icone("mais")}Criar Reels${escolhido ? ` de ${esc(escolhido)}` : ""}</button>
+          <button class="botao" type="button" data-acao="reels-surpresa" ${pedindo ? "disabled" : ""}>${icone("surpresa")}Surpreenda-me</button>
+        </div>
+      </form>
+      ${andamento}
+      <p class="sub" style="margin-top:10px">Leva uns 5 minutos. Os sites são conceitos: as marcas são inventadas e a legenda já avisa isso.</p>
+    </div>
+    ${prontos.length ? `<h2 class="mono" style="font-size:15px;margin:4px 0 12px">Prontos para postar</h2><div class="fila" style="margin-bottom:18px">${prontos.map(cartaoReels).join("")}</div>` : ""}
+    <div class="aviso-banner"><b>Como postar:</b> toque em <b>Baixar</b>, abra o Instagram › <b>+</b> › <b>Reels</b>, escolha o vídeo e, se quiser, uma música em alta. Toque em <b>Legenda</b> aqui para copiar o texto. Depois, <b>Já postei</b>.</div>
+    <div class="cartao vidro"><h2>Já postados</h2><div class="lista">${postados.map((v) => `<div class="lista-item" data-acao="assistir" data-id="${v.id}" role="button" style="cursor:pointer">
+      <span class="mini">${previa(v).jpg ? `<img data-asset="${previa(v).jpg}" alt="">` : ""}</span>
+      <span class="texto"><b>${esc(v.marca || v.titulo)}</b><small>${esc(v.segmento || "")} · ${dataCurta(v.publicado_em || v.data)}</small></span></div>`).join("") || '<p class="sub">Nenhum Reels marcado como postado ainda.</p>'}</div></div>`;
 }
 
 function pgHistorias() {
@@ -416,8 +515,8 @@ function pgHistorias() {
 const CHAVES = [
   { nome: "GEMINI_API_KEY", titulo: "Gemini (roteiro)", obrigatoria: true, cfg: "gemini",
     ajuda: "Obrigatória. Crie em aistudio.google.com/apikey", link: "https://aistudio.google.com/apikey" },
-  { nome: "PIXABAY_API_KEY", titulo: "Pixabay (paisagens)", cfg: "pixabay",
-    ajuda: "Opcional. Sem ela os vídeos usam só pinturas.", link: "https://pixabay.com/api/docs/" },
+  { nome: "PIXABAY_API_KEY", titulo: "Pixabay (fotos e paisagens)", cfg: "pixabay",
+    ajuda: "Opcional. Fotos profissionais nos sites dos Reels e paisagens nos Shorts.", link: "https://pixabay.com/api/docs/" },
   { nome: "PEXELS_API_KEY", titulo: "Pexels (paisagens)", cfg: "pexels",
     ajuda: "Opcional. O Pexels pausou chaves novas; use se já tiver uma." },
   { nome: "TELEGRAM_BOT_TOKEN", titulo: "Telegram: token do bot", cfg: "telegram",
@@ -458,6 +557,7 @@ function pgConfig() {
         ${item(true, "Vídeo novo todo dia", `às ${(cfg.horarios || [9]).map((h) => h + "h").join(", ")} (horário de Brasília). Para mudar: variável HORARIOS, ex.: 9,18.`)}
         ${item(true, "Duração", `${cfg.duracao_alvo || 60} segundos. Variável DURACAO_ALVO_SEG.`)}
         ${item(true, "Voz", esc(cfg.voz || "pt-BR-AntonioNeural") + ". Variável VOZ.")}
+        ${item(true, "Reels do Instagram", `Final com o botão “${esc(cfg.instagram_cta || "Peça o seu site")}” e ${esc(cfg.instagram_arroba || "@_clover.sd_")}. Variáveis INSTAGRAM_CTA e INSTAGRAM_ARROBA.`)}
       </ul>
       <div class="linha-acoes" style="margin-top:14px"><a class="botao pequeno" href="${variaveis}" target="_blank" rel="noopener">${icone("externo")}Mudar ajustes (Variables)</a></div>
     </div>
@@ -485,6 +585,7 @@ async function assistir(id) {
   if (!v) return;
   const p = previa(v);
   const modal = $("#modal");
+  if (ehReels(v)) return assistirReels(v, p, modal);
   const titulo = v.titulo.length + 8 <= 100 && !/#shorts/i.test(v.titulo) ? `${v.titulo} #Shorts` : v.titulo;
   modal.innerHTML = `<div class="modal-caixa vidro">
     <button class="fechar" data-acao="fechar-modal" aria-label="Fechar">${icone("fechar")}</button>
@@ -506,6 +607,24 @@ async function assistir(id) {
     try { $("video", modal).src = await urlMidia(p.mp4); } catch (erro) { avisar(erro.message, true); }
   }
 }
+async function assistirReels(v, p, modal) {
+  const ativo = ["aguardando", "aprovado"].includes(v.status);
+  modal.innerHTML = `<div class="modal-caixa vidro">
+    <button class="fechar" data-acao="fechar-modal" aria-label="Fechar">${icone("fechar")}</button>
+    ${p.mp4 ? '<video controls playsinline preload="metadata"></video>' : '<div class="vazio">A prévia deste Reels não está mais guardada.</div>'}
+    <h3>${esc(v.marca || v.titulo)}</h3>
+    <div class="meta">${esc(rotuloStatus(v))} · ${esc(v.segmento || "")} · ${dataCurta(v.data)}</div>
+    ${v.legenda ? `<div class="legenda-caixa">${esc(v.legenda)}</div>` : ""}
+    <div class="linha-acoes">
+      ${p.mp4 ? `<button class="botao" data-acao="baixar" data-id="${v.id}">${icone("baixar")}Baixar</button>` : ""}
+      ${v.legenda ? `<button class="botao" data-acao="copiar-legenda" data-id="${v.id}">${icone("copiar")}Copiar legenda</button>` : ""}
+      ${ativo ? `<button class="botao principal" data-acao="publicado" data-id="${v.id}">${icone("ok")}Já postei</button>` : ""}
+    </div></div>`;
+  modal.hidden = false;
+  if (p.mp4) {
+    try { $("video", modal).src = await urlMidia(p.mp4); } catch (erro) { avisar(erro.message, true); }
+  }
+}
 function fecharModal() { const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
 
 async function baixar(id) {
@@ -514,7 +633,8 @@ async function baixar(id) {
   if (!p || !p.mp4) return avisar("A prévia deste vídeo não está mais guardada.", true);
   try {
     const url = await urlMidia(p.mp4);
-    const a = Object.assign(document.createElement("a"), { href: url, download: `${v.id}.mp4`, rel: "noopener" });
+    const nome = ehReels(v) ? `reels-${(v.marca || v.id).toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-")}.mp4` : `${v.id}.mp4`;
+    const a = Object.assign(document.createElement("a"), { href: url, download: nome, rel: "noopener" });
     document.body.append(a); a.click(); a.remove();
   } catch (erro) { avisar(erro.message, true); }
 }
@@ -538,7 +658,8 @@ document.addEventListener("click", (ev) => {
     case "publicado": pedir("publicado", { id }, alvo); fecharModal(); break;
     case "abrir-refazer":
       app.abertos.add(id); fecharModal();
-      if (app.pagina !== "aprovacao") app.pagina = "aprovacao";
+      if (v && ehReels(v)) app.pagina = "instagram";
+      else if (app.pagina !== "aprovacao") app.pagina = "aprovacao";
       desenhar(); setTimeout(() => $(`form[data-id="${id}"] textarea`)?.focus(), 50); break;
     case "fechar-refazer": app.abertos.delete(id); desenhar(); break;
     case "assistir": assistir(id); break;
@@ -547,6 +668,9 @@ document.addEventListener("click", (ev) => {
     case "copiar": copiar(alvo.dataset.texto); break;
     case "copiar-titulo": copiar(v.titulo.length + 8 <= 100 ? `${v.titulo} #Shorts` : v.titulo); break;
     case "teste": pedir("teste", {}, alvo); break;
+    case "segmento": app.segmento = app.segmento === alvo.dataset.segmento ? "" : alvo.dataset.segmento; desenhar(); break;
+    case "reels-surpresa": app.segmento = ""; pedir("instagram", { tema: "", ajuste: $('form[data-form="instagram"] [name="ajuste"]')?.value.trim() || "" }, alvo); break;
+    case "copiar-legenda": if (v && v.legenda) copiar(v.legenda); else avisar("Este Reels não tem legenda guardada.", true); break;
     case "produzir-historia": pedir("produzir", { tema: alvo.dataset.tema }, alvo); break;
     case "filtro": app.filtro = alvo.dataset.filtro; desenhar(); break;
     case "recarregar": carregar(); break;
@@ -560,6 +684,11 @@ document.addEventListener("submit", (ev) => {
   ev.preventDefault();
   const botao = $("button[type=submit]", form);
   if (form.dataset.form === "produzir") pedir("produzir", { tema: form.tema.value.trim() }, botao);
+  if (form.dataset.form === "instagram") {
+    const tema = form.tema.value.trim() || app.segmento || "";
+    pedir("instagram", { tema, ajuste: form.ajuste.value.trim() }, botao);
+    app.segmento = "";
+  }
   if (form.dataset.form === "chave") {
     const valor = form.valor.value.trim();
     if (!valor) return avisar("Cole a chave antes de salvar.", true);

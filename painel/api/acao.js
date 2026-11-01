@@ -3,7 +3,7 @@
 // e nenhum pedido se perde mesmo se você apertar vários botões seguidos.
 import { REPO, gh, ErroGitHub, responder, responderErro, tokenDoPedido } from "./_github.js";
 
-const ACOES = new Set(["produzir", "teste", "aprovar", "refazer", "descartar", "publicado"]);
+const ACOES = new Set(["produzir", "teste", "instagram", "aprovar", "refazer", "descartar", "publicado"]);
 const PRECISA_ID = new Set(["aprovar", "refazer", "descartar", "publicado"]);
 
 export default async function handler(req, res) {
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: `Painel: ${acao}${id ? " " + id : ""}`,
+        message: `Painel: ${acao}${id ? " " + id : ""}${acao === "instagram" && pedido.tema ? ` (${pedido.tema.replace(/[\r\n]/g, " ").slice(0, 60)})` : ""}`,
         content: Buffer.from(JSON.stringify(pedido, null, 2) + "\n").toString("base64"),
       }),
     });

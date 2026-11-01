@@ -1,7 +1,9 @@
-# Clover · Fábrica de Shorts (Histórias da Bíblia)
+# Clover · Fábrica de Shorts (Histórias da Bíblia) e Reels da Clover
 
 Uma fábrica que faz sozinha, todo dia, um YouTube Short contando uma história da Bíblia, e um
 **painel** com a marca Clover onde você acompanha a produção ao vivo e aprova cada vídeo.
+Ela também faz **Reels de 30 s para o Instagram da Clover**: um site-conceito criado pela IA,
+rolando na tela de um notebook (veja [Reels da Clover](#reels-da-clover-instagram)).
 Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 
 **Painel:** https://clover-fabrica.vercel.app
@@ -32,6 +34,7 @@ estação o vídeo está.
   e os publicados.
 - **Vídeos**, **Histórias** (faça qualquer história da lista na hora) e **Configurações** (o que
   já está pronto e o que falta).
+- **Instagram:** escolha o segmento (barbearia, academia, clínica...) e toque em **Criar Reels**.
 - Barra lateral de vidro que recolhe, busca, modo noturno, funciona no celular e no computador.
 
 Cada botão do painel vira um pedido em `dados/pedidos/`, que faz a fábrica rodar na hora.
@@ -97,6 +100,38 @@ O bot manda cada vídeo novo com os botões **Aprovar**, **Refazer** e **Abrir o
 
 ---
 
+## Reels da Clover (Instagram)
+
+No painel, página **Instagram**: escolha um segmento (ou **Surpreenda-me**), escreva um pedido se
+quiser (ex.: "tema escuro, cores verde e dourado") e toque em **Criar Reels**. Em uns 5 minutos o
+vídeo aparece em **Prontos para postar**, com a legenda pronta para copiar.
+
+O vídeo (1080x1920, 30 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
+a luz roxa da Clover, o site-conceito rolando na tela com animações, e o final com a marca Clover,
+"Seu site pode ser assim", o botão e o @ do Instagram. A trilha lo-fi é gerada na hora (sem direitos
+autorais); no Instagram você pode trocar por uma música em alta.
+
+Os mesmos 8 passos do GitHub fazem o Reels:
+
+| # | Estação | No Reels |
+|---|---|---|
+| 1 | Pauta | escolhe o segmento |
+| 2 | Roteiro | o Gemini inventa a marca (fictícia) e escreve o site, as cores, as fontes e a legenda |
+| 3 | Narração | vira a trilha: batida lo-fi gerada na hora |
+| 4 | Cenas | baixa as fotos e monta o site |
+| 5 | Montagem | desenha o notebook 3D e o cartão final da Clover |
+| 6 | Shorts | grava o site rolando e monta o Reels |
+| 7 | Thumbnail | capa |
+| 8 | Agenda | guarda a prévia, avisa no Telegram e põe em **Instagram › Prontos para postar** |
+
+- **Fotos dos sites:** com a chave grátis do **Pixabay** (Configurações › Chaves da fábrica) os sites
+  ganham fotos profissionais do segmento. Sem ela, a fábrica tenta bancos livres e, se não achar,
+  usa artes com as cores da marca.
+- Os sites são **conceitos**: as marcas são inventadas e a legenda já diz que é um projeto conceito.
+- **Ajustes:** variáveis `INSTAGRAM_CTA` (botão do final, padrão "Peça o seu site") e
+  `INSTAGRAM_ARROBA` (padrão "@_clover.sd_").
+- O notebook 3D usa o [three.js](https://threejs.org) (licença MIT, em `fabrica/instagram/vendor/`).
+
 ## Ajustes (opcionais)
 Em **Settings › Secrets and variables › Actions › Variables**:
 
@@ -149,6 +184,7 @@ Com isso, **aprovar no painel já programa o vídeo no próximo horário livre**
 
 ## Estrutura
 - `fabrica/`: o motor (estações em `etapas.py`, ações em `acoes.py`, Gemini, voz, cenas, montagem).
+- `fabrica/instagram/`: os Reels (conceito do site, modelos de site, trilha, cena 3D e gravação).
 - `painel/`: o site (HTML/CSS/JS sem dependências) e a API em `painel/api/` (funções da Vercel).
 - `.github/workflows/fabrica.yml`: agenda de hora em hora, pedidos do painel e os 8 passos.
 - `dados/`: histórias, histórico, fila e pedidos.

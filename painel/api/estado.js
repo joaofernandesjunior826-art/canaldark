@@ -8,7 +8,7 @@ const ATIVOS = new Set(["queued", "in_progress", "waiting", "requested", "pendin
 async function execucoes(token) {
   const dados = await ghJson(token, `/repos/${REPO}/actions/workflows/${WORKFLOW}/runs?per_page=8`);
   const runs = (dados.workflow_runs || []).map((r) => ({
-    id: r.id, status: r.status, conclusao: r.conclusion, evento: r.event,
+    id: r.id, status: r.status, conclusao: r.conclusion, evento: r.event, titulo: r.display_title || "",
     inicio: r.run_started_at || r.created_at, fim: r.updated_at, url: r.html_url,
   }));
   const ativa = runs.find((r) => ATIVOS.has(r.status)) || null;

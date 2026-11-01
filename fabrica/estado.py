@@ -21,6 +21,7 @@ STATUS = {
     "descartado": "Descartado",
     "substituido": "Substituído por uma versão nova",
 }
+# Reels do Instagram: "aguardando" = pronto para postar; "publicado" = já postado.
 
 
 def agora() -> datetime:
@@ -73,7 +74,7 @@ def achar_por_mensagem(mensagem_id: int) -> dict | None:
 
 
 def ultimo_video() -> dict | None:
-    lista = [v for v in historico() if v.get("tipo") != "teste"]
+    lista = [v for v in historico() if v.get("tipo") not in ("teste", "instagram")]
     return lista[-1] if lista else None
 
 

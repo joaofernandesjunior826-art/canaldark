@@ -389,3 +389,21 @@ a.lista-item:hover b { color: var(--lavanda); }
 .chave-topo .sinal { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
 .chave-topo small { display: block; color: var(--texto-3); font-size: 12.5px; }
 .chave-topo a { color: var(--lavanda); }
+
+/* Instagram: segmentos e legenda */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--vidro-borda); background: var(--vidro); color: var(--texto-2);
+  cursor: pointer; font-size: 13.5px; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
+.chip:hover { color: var(--texto); background: var(--vidro-forte); }
+.chip.ativo { background: var(--roxo); border-color: var(--roxo); color: #fff; box-shadow: 0 8px 20px -10px rgba(124,58,237,.9); }
+.form-reels { display: flex; flex-direction: column; gap: 10px; }
+.legenda-caixa { margin: 10px 4px 12px; padding: 12px 14px; border-radius: 14px; background: var(--vidro); border: 1px solid var(--linha);
+  font-size: 13.5px; color: var(--texto-2); white-space: pre-wrap; max-height: 180px; overflow: auto; }
+.etiqueta.pronto { color: var(--verde); border-color: rgba(52,211,153,.35); }
+.aviso-banner a { color: var(--lavanda); }
+@media (max-width: 760px) {
+  .chips { display: grid; grid-auto-flow: column; grid-template-rows: repeat(3, auto); justify-content: start; overflow-x: auto;
+    margin: 0 -18px 14px; padding: 0 18px 4px; scrollbar-width: none; }
+  .chips > .chip { justify-self: start; }
+  .chips::-webkit-scrollbar { display: none; }
+}

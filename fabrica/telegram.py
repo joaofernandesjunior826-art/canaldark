@@ -103,6 +103,27 @@ def avisar_novo(video: Path, item: dict) -> list[int]:
     return [msg] if msg else []
 
 
+def avisar_reels(video: Path, item: dict) -> list[int]:
+    """Reels novo da Clover: manda o vídeo pronto para postar, com a legenda para copiar."""
+    if not ativo():
+        return []
+    linhas = [f"📱 <b>Reels novo: {html(item['titulo'])}</b>", f"⏱ {item.get('duracao_seg', 30)} s · site-conceito"]
+    if item.get("ajuste"):
+        linhas.append(f"✏️ Ajuste aplicado: <i>{html(item['ajuste'][:200])}</i>")
+    linhas += ["", "Baixe e poste no Instagram (escolha uma música em alta no app, se quiser). "
+                   "A legenda vem logo abaixo, é só copiar."]
+    botoes = [[{"text": "🔄 Refazer", "callback_data": f"refazer:{item['id']}"}]] + _botao_painel()
+    msg = enviar_video(video, "\n".join(linhas), botoes, item.get("duracao_seg", 0))
+    if not msg:
+        msg = enviar_texto("\n".join(linhas) + "\n\n⚠️ Não consegui anexar o vídeo aqui; baixe no painel.", botoes=botoes)
+    ids = [msg] if msg else []
+    if item.get("legenda"):
+        legenda = enviar_texto(f"<code>{html(item['legenda'][:3500])}</code>", responder_a=msg)
+        if legenda:
+            ids.append(legenda)
+    return ids
+
+
 def avisar_aprovado(item: dict | None) -> None:
     """Aprovado sem envio automático: manda os textos prontos e o passo a passo para postar."""
     if not ativo() or not item:

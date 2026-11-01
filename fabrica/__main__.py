@@ -23,7 +23,8 @@ def _config_atual() -> dict:
     return {"gemini": bool(config.GEMINI_API_KEY), "pexels": bool(config.PEXELS_API_KEY),
             "pixabay": bool(config.PIXABAY_API_KEY), "telegram": telegram.ativo(),
             "youtube_auto": youtube.configurado(), "horarios": config.HORARIOS,
-            "yt_horarios": config.YT_HORARIOS, "duracao_alvo": config.DURACAO_ALVO, "voz": config.VOZ}
+            "yt_horarios": config.YT_HORARIOS, "duracao_alvo": config.DURACAO_ALVO, "voz": config.VOZ,
+            "instagram_cta": config.INSTAGRAM_CTA, "instagram_arroba": config.INSTAGRAM_ARROBA}
 
 
 def planejar() -> None:
@@ -55,13 +56,15 @@ def planejar() -> None:
         acoes.enfileirar(e, {"tipo": "novo"})
 
     # 5) Escolhe o próximo vídeo a produzir (um por execução; o resto espera a próxima)
-    producao = False
+    producao, tipo = False, "shorts"
     if not etapas.ler_trabalho():
         for tarefa in list(e["fila"]):
-            if tarefa["tipo"] in acoes.TAREFAS_DE_PRODUCAO and (config.GEMINI_API_KEY or tarefa["tipo"] == "teste"):
+            pode = config.GEMINI_API_KEY or tarefa["tipo"] == "teste" or tarefa.get("exemplo")
+            if tarefa["tipo"] in acoes.TAREFAS_DE_PRODUCAO and pode:
                 e["fila"].remove(tarefa)
                 etapas.iniciar(tarefa)
                 producao = True
+                tipo = "instagram" if tarefa["tipo"] == "instagram" else "shorts"
                 print(f"Produzindo agora: {tarefa}")
                 break
     publicar = youtube.configurado() and any(t["tipo"] == "publicar" for t in e["fila"])
@@ -71,7 +74,7 @@ def planejar() -> None:
     print(f"Pedidos na fila: {len(e['fila'])}")
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            f.write(f"producao={'sim' if producao else 'nao'}\npublicar={'sim' if publicar else 'nao'}\n")
+            f.write(f"producao={'sim' if producao else 'nao'}\npublicar={'sim' if publicar else 'nao'}\ntipo={tipo}\n")
 
 
 def teste(tema: str, arquivo_roteiro: str | None) -> None:

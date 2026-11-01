@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Clover · cena do notebook</title>
+<!--
+  Cena do Reels: um notebook escuro, realista (three.js), com luz roxa da Clover.
+  A câmera fica parada; o Python fotografa as camadas desta página uma vez só (fundo, máscara da
+  tela, brilho do vidro, frase de abertura) e o ffmpeg encaixa o site, gravado à parte, na tela.
+  O cartão final da Clover é gravado aqui mesmo, quadro a quadro (quadroFinal).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=block">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #07060a; }
+  body { font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #palco { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+  #gl, #vidro { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+
+  /* Frase de abertura (estilo texto do Instagram) */
+  #gancho { position: absolute; left: 0; right: 0; top: 268px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  #gancho span { display: inline-block; background: #fff; color: #0c0c0c; font-weight: 800; font-size: 56px; line-height: 1.12; letter-spacing: -0.01em;
+    padding: 8px 22px 10px; border-radius: 16px; white-space: nowrap; }
+  #gancho #g2 { background: #7c3aed; color: #fff; }
+
+  /* Cartão final da Clover */
+  #final { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 26px; text-align: center; padding: 0 80px;
+    background: radial-gradient(60% 40% at 30% 30%, rgba(124,58,237,.55), rgba(124,58,237,0) 70%), radial-gradient(50% 35% at 75% 70%, rgba(196,181,253,.22), rgba(196,181,253,0) 70%),
+      radial-gradient(#221e2c 2.2px, transparent 2.6px) 0 0 / 40px 40px, #0b0a10; color: #f5f3ff; }
+  #final .marca { width: 200px; height: 200px; object-fit: contain; }
+  #final .wordmark { font: 800 100px "JetBrains Mono", monospace; letter-spacing: -0.04em; }
+  #final .wordmark b { color: #7c3aed; }
+  #final .frase { font: 800 66px/1.12 "Inter"; letter-spacing: -0.03em; max-width: 920px; }
+  #final .frase em { font-style: normal; color: #c4b5fd; }
+  #final .cta { margin-top: 18px; font: 700 42px "Inter"; padding: 28px 52px; border-radius: 999px; background: #7c3aed; color: #fff; box-shadow: 0 24px 60px -18px rgba(124,58,237,.95); }
+  #final .sub { font: 500 34px "JetBrains Mono", monospace; color: #a9a3bd; }
+
+  /* Camadas fotografadas separadamente */
+  body.so-gancho #gl, body.so-gancho #vidro, body.so-gancho #final { visibility: hidden; }
+  body.so-vidro #gl, body.so-vidro #gancho, body.so-vidro #final { visibility: hidden; }
+  body.cena #gancho, body.cena #vidro, body.cena #final { visibility: hidden; }
+  body.final #palco > *:not(#final) { visibility: hidden; }
+  body.final #final { display: flex; }
+  body.transparente, html.transparente, body.transparente #palco { background: transparent !important; }
+</style>
+</head>
+<body class="cena">
+<div id="palco">
+  <canvas id="gl"></canvas>
+  <canvas id="vidro" width="1080" height="1920"></canvas>
+  <div id="gancho"><span id="g1"></span><span id="g2"></span></div>
+  <div id="final">
+    <img class="marca" id="final-marca" alt="">
+    <div class="wordmark" id="final-nome"><b>&lt;</b>clover<b>/&gt;</b></div>
+    <div class="frase" id="final-frase"></div>
+    <div class="cta" id="final-cta"></div>
+    <div class="sub" id="final-sub"></div>
+  </div>
+</div>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "./vendor/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "./vendor/RoomEnvironment.js";
+import { RectAreaLightUniformsLib } from "./vendor/RectAreaLightUniformsLib.js";
+import { Reflector } from "./vendor/Reflector.js";
+
+const L = 1080, A = 1920, ESCALA = 2;   // renderiza em 2x e o navegador reduz (bordas lisas)
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const saida = (k) => 1 - Math.pow(1 - clamp(k), 3);
+const molinha = (k) => { k = clamp(k); const c = 1.9; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+
+// ---------- medidas do notebook (centímetros) ----------
+const N = { larg: 30.4, prof: 21.5, alt: 1.5, tampaAlt: 20.6, tampaEsp: 0.5, telaL: 29.0, telaA: 18.125 };
+const S = {};   // objetos da cena
+
+function material(cor, metal, aspereza, extra = {}) {
+  return new THREE.MeshPhysicalMaterial({ color: new THREE.Color(cor), metalness: metal, roughness: aspereza, ...extra });
+}
+
+function fundoGradiente(corBrilho) {
+  const c = document.createElement("canvas"); c.width = 540; c.height = 960;
+  const g = c.getContext("2d");
+  g.fillStyle = "#060509"; g.fillRect(0, 0, 540, 960);
+  const r1 = g.createRadialGradient(330, 330, 10, 330, 330, 520);
+  r1.addColorStop(0, corBrilho); r1.addColorStop(.45, "rgba(60,30,120,.35)"); r1.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = r1; g.fillRect(0, 0, 540, 960);
+  const r2 = g.createRadialGradient(60, 120, 0, 60, 120, 380);
+  r2.addColorStop(0, "rgba(124,58,237,.30)"); r2.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = r2; g.fillRect(0, 0, 540, 960);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function sombraDeContato() {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const g = c.getContext("2d");
+  const r = g.createRadialGradient(128, 128, 20, 128, 128, 128);
+  r.addColorStop(0, "rgba(0,0,0,.85)"); r.addColorStop(.55, "rgba(0,0,0,.45)"); r.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = r; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(N.larg * 1.5, N.prof * 1.45), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(0, 0.02, N.prof / 2);
+  return m;
+}
+
+function montarNotebook(op) {
+  const grupo = new THREE.Group();
+  const aluminio = material(op.corCorpo || "#2a2b30", 0.85, 0.36, { clearcoat: 0.25, clearcoatRoughness: 0.4 });
+  // base
+  const base = new THREE.Mesh(new RoundedBoxGeometry(N.larg, N.alt, N.prof, 5, 0.55), aluminio);
+  base.position.set(0, N.alt / 2, N.prof / 2);
+  grupo.add(base);
+  // rebaixo do teclado, luz de fundo e teclas
+  const topo = N.alt + 0.002;
+  const poco = new THREE.Mesh(new THREE.PlaneGeometry(25.2, 10.6), material("#0b0b0d", 0.2, 0.7));
+  poco.rotation.x = -Math.PI / 2; poco.position.set(0, topo, 6.35);
+  grupo.add(poco);
+  const brilhoTeclas = new THREE.Mesh(new THREE.PlaneGeometry(24.6, 10.0), new THREE.MeshBasicMaterial({ color: new THREE.Color(op.luzTeclado || "#f1efff"), transparent: true, opacity: .1 }));
+  brilhoTeclas.rotation.x = -Math.PI / 2; brilhoTeclas.position.set(0, topo + 0.003, 6.35);
+  grupo.add(brilhoTeclas);
+  const tecla = new RoundedBoxGeometry(1.0, 0.16, 1.0, 2, 0.1);
+  const matTecla = material("#121214", 0.1, 0.55, { clearcoat: 0.4, clearcoatRoughness: 0.5 });
+  const posicoes = [];
+  const passo = 24.4 / 14, larguraTecla = passo - 0.2;
+  const linhas = [{ z: 1.75, h: 0.75, n: 14 }];
+  for (let r = 0; r < 5; r++) linhas.push({ z: 2.95 + r * passo, h: larguraTecla, n: 14 });
+  for (const ln of linhas) for (let i = 0; i < ln.n; i++) posicoes.push([-12.2 + passo * (i + .5), ln.z, larguraTecla, ln.h]);
+  const teclas = new THREE.InstancedMesh(tecla, matTecla, posicoes.length);
+  const m4 = new THREE.Matrix4();
+  posicoes.forEach(([x, z, w, h], i) => {
+    m4.compose(new THREE.Vector3(x, topo + 0.08, z), new THREE.Quaternion(), new THREE.Vector3(w, 1, h));
+    teclas.setMatrixAt(i, m4);
+  });
+  grupo.add(teclas);
+  // trackpad
+  const pad = new THREE.Mesh(new RoundedBoxGeometry(13.4, 0.02, 8.4, 2, 0.008), material(op.corCorpo || "#2a2b30", 0.7, 0.22, { clearcoat: 0.6, clearcoatRoughness: 0.15 }));
+  pad.position.set(0, topo + 0.004, 16.4);
+  grupo.add(pad);
+  // dobradiça
+  const dobradica = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 25.5, 24), material("#141417", 0.6, 0.45));
+  dobradica.rotation.z = Math.PI / 2; dobradica.position.set(0, 1.05, 0.2);
+  grupo.add(dobradica);
+  // tampa (gira na dobradiça)
+  const tampa = new THREE.Group();
+  tampa.position.set(0, N.alt - 0.1, 0.25);
+  tampa.rotation.x = -THREE.MathUtils.degToRad(op.abertura ?? 14);
+  const casca = new THREE.Mesh(new RoundedBoxGeometry(N.larg, N.tampaAlt, N.tampaEsp, 5, 0.22), aluminio);
+  casca.position.set(0, N.tampaAlt / 2, -N.tampaEsp / 2);
+  tampa.add(casca);
+  const moldura = new THREE.Mesh(new THREE.PlaneGeometry(N.larg - 0.5, N.tampaAlt - 0.5), material("#050506", 0.0, 0.08, { clearcoat: 1, clearcoatRoughness: 0.05 }));
+  moldura.position.set(0, N.tampaAlt / 2, 0.012);
+  tampa.add(moldura);
+  const corTela = new THREE.Color(op.corTela || "#f2efe9");
+  const tela = new THREE.Mesh(new THREE.PlaneGeometry(N.telaL, N.telaA), new THREE.MeshBasicMaterial({ color: corTela }));
+  const margemTopo = 0.75;
+  tela.position.set(0, N.tampaAlt - margemTopo - N.telaA / 2, 0.02);
+  tampa.add(tela);
+  grupo.add(tampa);
+  // luz que sai da tela (ilumina o teclado como na foto real)
+  const luzTela = new THREE.RectAreaLight(corTela, op.forcaTela ?? 1.6, N.telaL, N.telaA);
+  luzTela.position.copy(tela.position).add(new THREE.Vector3(0, 0, 0.05));
+  luzTela.lookAt(new THREE.Vector3(0, tela.position.y - 3, 20));
+  tampa.add(luzTela);
+  Object.assign(S, { grupo, tela, tampa, luzTela });
+  return grupo;
+}
+
+window.configurar = async function (op) {
+  op = op || {};
+  RectAreaLightUniformsLib.init();
+  const canvas = $("gl");
+  canvas.width = L * ESCALA; canvas.height = A * ESCALA;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: false });
+  renderer.setPixelRatio(1);
+  renderer.setSize(L * ESCALA, A * ESCALA, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = op.exposicao ?? 1.0;
+  const scene = new THREE.Scene();
+  scene.background = fundoGradiente(op.brilhoFundo || "rgba(124,58,237,.55)");
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = op.ambiente ?? 0.22;
+
+  scene.add(montarNotebook(op));
+  scene.add(sombraDeContato());
+  // chão brilhante (reflexo suave: textura pequena = reflexo desfocado)
+  const espelho = new Reflector(new THREE.PlaneGeometry(400, 400), { color: new THREE.Color("#2b2833"), textureWidth: 320, textureHeight: 320, clipBias: 0.003 });
+  espelho.rotation.x = -Math.PI / 2; espelho.position.y = -0.001;
+  scene.add(espelho);
+  const veu = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: "#07060a", transparent: true, opacity: op.veuChao ?? 0.78, depthWrite: false }));
+  veu.rotation.x = -Math.PI / 2; veu.position.y = 0.005;
+  scene.add(veu);
+
+  // luzes: contorno roxo (marca), luz fria de recorte e um preenchimento bem fraco
+  const roxa = new THREE.RectAreaLight(new THREE.Color(op.corContorno || "#8b5cf6"), op.forcaContorno ?? 14, 30, 22);
+  roxa.position.set(-26, 22, -14); roxa.lookAt(0, 8, 6);
+  scene.add(roxa);
+  const fria = new THREE.RectAreaLight(new THREE.Color("#c9d4ff"), op.forcaFria ?? 3.5, 40, 12);
+  fria.position.set(22, 30, 30); fria.lookAt(0, 4, 8);
+  scene.add(fria);
+  const preenche = new THREE.HemisphereLight(0x8e86b8, 0x050407, op.preenchimento ?? 0.35);
+  scene.add(preenche);
+
+  // câmera em órbita ao redor da tela: ângulo lateral (negativo = pela esquerda) e altura; a distância
+  // e o ponto de mira são ajustados sozinhos para a tela inteira caber, ocupando ~90% da largura
+  const cam = Object.assign({ dist: 80, az: -20, alt: 13, alvoX: 0, alvoY: 9, alvoZ: -2.4, fov: 38, ocupa: 0.9, topo: 505 }, op.camera || {});
+  const camera = new THREE.PerspectiveCamera(cam.fov, L / A, 0.5, 900);
+  Object.assign(S, { renderer, scene, camera, espelho, veu });
+  scene.updateMatrixWorld(true);
+  enquadrar(camera, cam);
+
+  $("g1").textContent = op.gancho1 || "Cliente: “quero um site”";
+  $("g2").textContent = op.gancho2 || "O site:";
+  $("final-frase").innerHTML = op.frase || "Seu site pode ser <em>assim</em>.";
+  $("final-cta").textContent = op.cta || "Fale com a Clover";
+  $("final-sub").textContent = op.sub || "link na bio";
+  if (op.marca) { $("final-marca").src = op.marca; await $("final-marca").decode().catch(() => $("final-marca").remove()); }
+  else $("final-marca").remove();
+  await document.fonts.ready;
+  desenharVidro();
+  renderizar("cena");
+  return true;
+};
+
+function posicionar(camera, cam) {
+  const az = THREE.MathUtils.degToRad(cam.az);
+  camera.position.set(cam.alvoX + cam.dist * Math.sin(az), cam.alt, cam.alvoZ + cam.dist * Math.cos(az));
+  camera.lookAt(cam.alvoX, cam.alvoY, cam.alvoZ);
+  camera.updateMatrixWorld(true);
+}
+function enquadrar(camera, cam) {
+  for (let i = 0; i < 40; i++) {
+    posicionar(camera, cam);
+    const q = cantos(), xs = q.map((p) => p[0]), ys = q.map((p) => p[1]);
+    const largura = Math.max(...xs) - Math.min(...xs), altura = Math.max(...ys) - Math.min(...ys);
+    const meioX = (Math.max(...xs) + Math.min(...xs)) / 2, topo = Math.min(...ys);
+    const erroL = largura / (L * cam.ocupa), erroX = meioX - L / 2, erroY = topo - cam.topo;
+    if (Math.abs(erroL - 1) < 0.004 && Math.abs(erroX) < 2 && Math.abs(erroY) < 2) break;
+    cam.dist *= Math.pow(erroL, 0.85);
+    cam.alvoX += erroX * (N.telaL / largura) * 0.8 * Math.cos(THREE.MathUtils.degToRad(cam.az));
+    cam.alvoZ -= erroX * (N.telaL / largura) * 0.8 * Math.sin(THREE.MathUtils.degToRad(cam.az));
+    cam.alvoY -= erroY * (N.telaA / altura) * 0.8;
+  }
+  posicionar(camera, cam);
+}
+
+// Cantos da tela (em pixels da imagem final)
+function cantos() {
+  const { tela, camera } = S;
+  const w = N.telaL / 2, h = N.telaA / 2;
+  return [[-w, h], [w, h], [-w, -h], [w, -h]].map(([x, y]) => {
+    const v = new THREE.Vector3(x, y, 0).applyMatrix4(tela.matrixWorld).project(camera);
+    return [(v.x + 1) / 2 * L, (1 - v.y) / 2 * A];
+  });
+}
+
+// Reflexo do vidro por cima do site: brilho diagonal suave, só dentro da tela
+function desenharVidro() {
+  const c = $("vidro"), g = c.getContext("2d");
+  g.clearRect(0, 0, L, A);
+  const q = cantos();
+  g.save();
+  g.beginPath(); g.moveTo(...q[0]); g.lineTo(...q[1]); g.lineTo(...q[3]); g.lineTo(...q[2]); g.closePath(); g.clip();
+  const [x0, y0] = q[0], [x3, y3] = q[3];
+  const grad = g.createLinearGradient(x0, y0, x0 + (x3 - x0) * .55, y0 + (y3 - y0) * .9);
+  grad.addColorStop(0, "rgba(255,255,255,.16)"); grad.addColorStop(.38, "rgba(255,255,255,.05)"); grad.addColorStop(.5, "rgba(255,255,255,0)");
+  g.fillStyle = grad; g.fillRect(0, 0, L, A);
+  const roxo = g.createLinearGradient(x0, y0, x0 + 140, y0 + 60);
+  roxo.addColorStop(0, "rgba(167,139,250,.22)"); roxo.addColorStop(1, "rgba(167,139,250,0)");
+  g.fillStyle = roxo; g.fillRect(0, 0, L, A);
+  g.restore();
+}
+
+function renderizar(modo) {
+  const { renderer, scene, camera, tela } = S;
+  if (modo === "mascara") {
+    const guardado = { bg: scene.background, env: scene.environment, tm: renderer.toneMapping };
+    scene.background = new THREE.Color("#000000"); scene.environment = null; renderer.toneMapping = THREE.NoToneMapping;
+    const visiveis = [];
+    scene.traverse((o) => { if ((o.isMesh || o.isLight) && o !== tela) { visiveis.push([o, o.visible]); o.visible = false; } });
+    const matAntigo = tela.material;
+    tela.material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    renderer.render(scene, camera);
+    tela.material = matAntigo;
+    for (const [o, v] of visiveis) o.visible = v;
+    Object.assign(scene, { background: guardado.bg, environment: guardado.env });
+    renderer.toneMapping = guardado.tm;
+  } else {
+    renderer.render(scene, camera);
+  }
+}
+
+// Camadas: "cena" (notebook com a tela lisa), "tela" (máscara branca da tela), "vidro" (reflexo do
+// vidro, fundo transparente), "gancho" (frase de abertura, fundo transparente), "final".
+window.camada = function (nome) {
+  const transparente = nome === "vidro" || nome === "gancho";
+  document.body.className = { cena: "cena", tela: "cena", vidro: "so-vidro", gancho: "so-gancho", final: "final" }[nome] + (transparente ? " transparente" : "");
+  document.documentElement.classList.toggle("transparente", transparente);
+  if (nome === "cena") renderizar("cena");
+  if (nome === "tela") renderizar("mascara");
+  return true;
+};
+
+window.medidas = function () {
+  const caixa = (id) => { const r = $(id).getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; };
+  return { cantos: cantos(), g1: caixa("g1"), g2: caixa("g2") };
+};
+
+window.quadroFinal = function (t) {
+  const itens = [["final-marca", 0], ["final-nome", .1], ["final-frase", .22], ["final-cta", .42], ["final-sub", .6]];
+  for (const [id, atraso] of itens) {
+    const el = $(id);
+    if (!el) continue;
+    const k = (t - atraso) / .7;
+    el.style.opacity = clamp(k * 1.4);
+    const escala = id === "final-cta" || id === "final-marca" ? .86 + .14 * molinha(k) : 1;
+    el.style.transform = `translateY(${(1 - saida(k)) * 46}px) scale(${escala})`;
+  }
+  return true;
+};
+
+window.pronto = true;
+</script>
+</body>
+</html>

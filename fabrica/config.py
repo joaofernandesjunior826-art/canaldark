@@ -79,6 +79,10 @@ GITHUB_TOKEN = _env("GITHUB_TOKEN")
 GITHUB_REPOSITORY = _env("GITHUB_REPOSITORY")
 RELEASE_PREVIAS = "previas"  # onde ficam os vídeos para o painel assistir e baixar
 
+# ---- Reels da Clover para o Instagram (sites-conceito) -----------------------
+INSTAGRAM_CTA = _env("INSTAGRAM_CTA", "Peça o seu site")         # botão do cartão final
+INSTAGRAM_ARROBA = _env("INSTAGRAM_ARROBA", "@_clover.sd_")       # aparece embaixo do botão
+
 # ---- Painel (site com a fábrica e a fila de aprovação) ----------------------
 PAINEL_URL = _env("PAINEL_URL", "https://clover-fabrica.vercel.app")
 

@@ -1,7 +1,7 @@
 """Ações sobre os vídeos, venham elas do painel, do Telegram ou do botão "Run workflow" do GitHub."""
 from . import config, estado, telegram, youtube
 
-TAREFAS_DE_PRODUCAO = ("novo", "extra", "refazer", "teste")
+TAREFAS_DE_PRODUCAO = ("novo", "extra", "refazer", "teste", "instagram")
 
 
 def enfileirar(e: dict, tarefa: dict) -> bool:
@@ -38,9 +38,21 @@ def aplicar(e: dict, pedido: dict) -> str:
     if acao == "teste":
         enfileirar(e, {"tipo": "teste"})
         return "Vídeo de teste na fila."
+    if acao == "instagram":  # Reels da Clover: site-conceito de um segmento rolando no notebook
+        tarefa = {"tipo": "instagram", "tema": tema, "ajuste": ajuste, "pedido": pedido.get("quando", "")}
+        if not config.GEMINI_API_KEY or pedido.get("exemplo"):
+            tarefa["exemplo"] = True
+        enfileirar(e, tarefa)
+        return f"Reels {'de ' + tema if tema else 'com segmento surpresa'} na fila."
     if not video:
         return f"Não achei o vídeo {video_id or '(sem id)'}."
 
+    if acao == "refazer" and video.get("tipo") == "instagram":
+        tarefa = {"tipo": "instagram", "tema": video.get("segmento", ""), "ajuste": ajuste, "origem": video["id"]}
+        if not config.GEMINI_API_KEY or video.get("titulo", "").startswith("[TESTE]"):
+            tarefa["exemplo"] = True
+        enfileirar(e, tarefa)
+        return f"Refazendo o Reels “{video['titulo']}”."
     if acao == "refazer":
         if not config.GEMINI_API_KEY and video.get("tipo") != "teste":
             return "Falta cadastrar a chave GEMINI_API_KEY nos Secrets do GitHub."

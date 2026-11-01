@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from . import arte, cenas, config, estado, github, montagem, narracao, roteiro, telegram, youtube
+from .instagram import estacoes as reels
 
 ETAPAS = [("pauta", "1 Pauta"), ("roteiro", "2 Roteiro"), ("narracao", "3 Narração"),
           ("cenas", "4 Cenas"), ("montagem", "5 Montagem"), ("shorts", "6 Shorts"),
@@ -185,12 +186,16 @@ ESTACOES = {"pauta": _pauta, "roteiro": _roteiro, "narracao": _narracao, "cenas"
             "montagem": _montagem, "shorts": _shorts, "thumbnail": _thumbnail}
 
 
+def eh_reels(t: dict | None) -> bool:
+    return bool(t) and t["tarefa"]["tipo"] == "instagram"
+
+
 def executar_etapa(nome: str, enviar: bool = True) -> None:
     numero = next(i for i, (n, _) in enumerate(ETAPAS, 1) if n == nome)
     t = ler_trabalho()
     if nome == "agenda":
         if t and t["etapa"] == numero - 1:
-            _agenda(t, enviar)
+            (reels.agenda if eh_reels(t) else _agenda)(t, enviar)
             if enviar:
                 _limpar(t)
                 ARQ_TRABALHO.unlink(missing_ok=True)
@@ -203,7 +208,7 @@ def executar_etapa(nome: str, enviar: bool = True) -> None:
         return
     if t["etapa"] != numero - 1:
         raise RuntimeError(f"Estação fora de ordem: {nome} (o trabalho está na etapa {t['etapa']}).")
-    ESTACOES[nome](t)
+    (reels.ESTACOES if eh_reels(t) else ESTACOES)[nome](t)
     t["etapa"] = numero
     salvar_trabalho(t)
 
@@ -223,8 +228,9 @@ def produzir_tudo(tarefa: dict, enviar: bool = True, roteiro_pronto: dict | None
 def _limpar(t: dict) -> None:
     pasta = Path(t["pasta"])
     for arq in [*pasta.glob("cena_*.mp4"), *pasta.glob("pintura_*.jpg"), *pasta.glob("voz_*.mp3"), pasta / "video_mudo.mp4",
-                pasta / "narracao.wav", pasta / "musica.wav"]:
+                pasta / "narracao.wav", pasta / "musica.wav", *pasta.glob("camada_*"), pasta / "trilha.wav"]:
         arq.unlink(missing_ok=True)
+    shutil.rmtree(pasta / "vendor", ignore_errors=True)
 
 
 def _limpar_previas_antigas() -> None:
@@ -241,8 +247,10 @@ def registrar_falha() -> None:
     t = ler_trabalho()
     e = estado.ler_estado()
     if t:
-        estacao = ETAPAS[min(t["etapa"], len(ETAPAS) - 1)][1]
+        nome_etapa, estacao = ETAPAS[min(t["etapa"], len(ETAPAS) - 1)]
         tarefa = t["tarefa"]
+        if eh_reels(t):
+            estacao = f"{t['etapa'] + 1} {reels.ROTULOS[nome_etapa]} (Reels)"
         if tarefa["tipo"] == "novo":
             n = estado.registrar_falha(e)
             if n >= config.MAX_FALHAS_POR_DIA:
@@ -250,6 +258,8 @@ def registrar_falha() -> None:
             else:
                 msg = (f"⚠️ O vídeo de hoje parou na estação {estacao} (tentativa {n} de "
                        f"{config.MAX_FALHAS_POR_DIA}). Tento de novo na próxima hora.")
+        elif eh_reels(t):
+            msg = f"⚠️ O Reels parou na estação {estacao}. Pode pedir de novo daqui a pouco."
         else:
             msg = f"⚠️ Um pedido parou na estação {estacao}. Pode pedir de novo daqui a pouco."
         e["ultima_falha"] = {"estacao": estacao, "quando": estado.agora().isoformat(timespec="seconds"),
