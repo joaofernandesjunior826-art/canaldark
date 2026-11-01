@@ -4,5 +4,18 @@
     "data": "",
     "n": 0
   },
-  "clipes_usados": []
+  "clipes_usados": [],
+  "config": {
+    "gemini": false,
+    "pexels": false,
+    "pixabay": false,
+    "telegram": false,
+    "youtube_auto": false,
+    "horarios": [
+      9
+    ],
+    "yt_horarios": [],
+    "duracao_alvo": 60,
+    "voz": "pt-BR-AntonioNeural"
+  }
 }
