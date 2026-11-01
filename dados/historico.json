@@ -86,5 +86,28 @@
     "telegram": [],
     "aprovado_em": "2026-11-01T18:30:37-03:00",
     "publicado_em": "2026-11-01T18:50:27-03:00"
+  },
+  {
+    "id": "20261101-185648",
+    "tipo": "extra",
+    "status": "aguardando",
+    "historia": "Noé e o dilúvio",
+    "referencia": "Gênesis 6-9",
+    "titulo": "O Dia em que o Céu Desabou: A Verdadeira História de Noé",
+    "descricao": "Conheça a emocionante história de Noé e da grande arca que sobreviveu às águas, conforme relatado no livro de Gênesis. Uma lição impressionante de fé, paciência e obediência. #Shorts #Bíblia #HistóriasDaBíblia #Fé",
+    "tags": [
+      "Noé",
+      "Arca de Noé",
+      "Dilúvio",
+      "Gênesis",
+      "Histórias da Bíblia",
+      "Fé",
+      "Antigo Testamento",
+      "Deus"
+    ],
+    "data": "2026-11-01T19:06:34-03:00",
+    "duracao_seg": 72,
+    "previa": true,
+    "telegram": []
   }
 ]

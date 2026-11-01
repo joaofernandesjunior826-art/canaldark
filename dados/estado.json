@@ -34,12 +34,24 @@
     "commons:57384394",
     "commons:63204573",
     "commons:659517",
-    "commons:74876476"
+    "commons:74876476",
+    "commons:179045148",
+    "commons:18448079",
+    "commons:189255735",
+    "commons:199918283",
+    "commons:20325409",
+    "commons:60952804",
+    "commons:83492424",
+    "commons:84756182",
+    "commons:85099294",
+    "pixabay:174773",
+    "pixabay:2147",
+    "pixabay:285663"
   ],
   "config": {
     "gemini": true,
     "pexels": false,
-    "pixabay": false,
+    "pixabay": true,
     "telegram": false,
     "youtube_auto": false,
     "horarios": [
