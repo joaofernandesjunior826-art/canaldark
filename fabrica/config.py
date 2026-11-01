@@ -75,7 +75,7 @@ GITHUB_REPOSITORY = _env("GITHUB_REPOSITORY")
 RELEASE_PREVIAS = "previas"  # onde ficam os vídeos para o painel assistir e baixar
 
 # ---- Painel (site com a fábrica e a fila de aprovação) ----------------------
-PAINEL_URL = _env("PAINEL_URL")
+PAINEL_URL = _env("PAINEL_URL", "https://clover-fabrica.vercel.app")
 
 # ---- Link desta execução no GitHub (para baixar o vídeo se o Telegram recusar) ----
 LINK_EXECUCAO = (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
