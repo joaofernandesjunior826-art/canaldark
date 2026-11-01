@@ -40,7 +40,7 @@
   {
     "id": "20261101-181335",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A criação do mundo",
     "referencia": "Gênesis 1-2",
     "titulo": "Como o Universo Surgiu do Nada Segundo a Bíblia",
@@ -57,7 +57,8 @@
     "data": "2026-11-01T18:19:49-03:00",
     "duracao_seg": 63,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-01T18:30:53-03:00"
   },
   {
     "id": "20261101-182315",
