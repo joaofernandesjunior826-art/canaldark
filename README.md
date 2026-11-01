@@ -13,7 +13,7 @@ Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 | 1 | Pauta | Escolhe a próxima história de `dados/historias.txt` (90 histórias, sem repetir) |
 | 2 | Roteiro | Gemini escreve o texto, o título, a descrição e as hashtags |
 | 3 | Narração | Voz neural em português (edge-tts) |
-| 4 | Cenas | Pinturas clássicas da própria história (Wikimedia, domínio público) com movimento lento, misturadas com vídeos de paisagem do Pexels |
+| 4 | Cenas | Pinturas clássicas da própria história (Wikimedia, domínio público) com movimento lento, misturadas com vídeos de paisagem do Pixabay ou Pexels |
 | 5 | Montagem | Junta as cenas e a narração (ffmpeg) |
 | 6 | Shorts | Legenda animada, frase de impacto, música ambiente, 9:16 |
 | 7 | Thumbnail | Capa do vídeo |
@@ -52,9 +52,12 @@ humana que o YouTube exige para monetizar. Se a auditoria for aprovada, ligue o 
 ### 1. Chave do Gemini (roteiro)
 Em https://aistudio.google.com/apikey, entre com sua conta Google e toque em **Create API key**.
 
-### 2. Chave do Pexels (paisagens)
-Crie uma conta em https://www.pexels.com/api/ e peça a chave (sai na hora).
-Opcional: https://pixabay.com/api/docs/ (reserva).
+### 2. Chave do Pixabay (paisagens, opcional)
+Sem ela os vídeos já saem com pinturas clássicas da história. Com ela, a fábrica mistura paisagens.
+O Pexels pausou a emissão de novas chaves; use o Pixabay:
+1. Crie uma conta grátis em https://pixabay.com (ou entre com o Google).
+2. Abra https://pixabay.com/api/docs/ já logado: a sua chave aparece em verde na parte
+   **Parameters › key** ("Your API key"). Copie.
 
 ### 3. Cadastrar no GitHub
 No repositório: **Settings › Secrets and variables › Actions › New repository secret**:
@@ -62,8 +65,8 @@ No repositório: **Settings › Secrets and variables › Actions › New reposi
 | Nome | Valor |
 |---|---|
 | `GEMINI_API_KEY` | chave do passo 1 |
-| `PEXELS_API_KEY` | chave do passo 2 |
-| `PIXABAY_API_KEY` | (opcional) |
+| `PIXABAY_API_KEY` | chave do passo 2 (opcional) |
+| `PEXELS_API_KEY` | (opcional, se você já tiver uma chave do Pexels) |
 | `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` | (opcional, avisos no celular; veja abaixo) |
 
 ### 4. Conectar o painel

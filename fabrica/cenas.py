@@ -39,19 +39,23 @@ def _pixabay(busca: str, evitar: set, min_dur: float) -> list[tuple[bool, str, s
     if not config.PIXABAY_API_KEY:
         return []
     r = requests.get("https://pixabay.com/api/videos/", timeout=30,
-                     params={"key": config.PIXABAY_API_KEY, "q": busca, "per_page": 30,
-                             "safesearch": "true"})
+                     params={"key": config.PIXABAY_API_KEY, "q": busca[:100], "per_page": 30,
+                             "video_type": "film", "safesearch": "true"})
     if r.status_code != 200:
         print(f"Pixabay HTTP {r.status_code} para '{busca}'")
         return []
     candidatos = []
     for video in r.json().get("hits", []):
         chave = f"pixabay:{video['id']}"
+        if chave in evitar:
+            continue
         variantes = video.get("videos", {})
-        url = next((variantes[t]["url"] for t in ("large", "medium", "small")
-                    if variantes.get(t, {}).get("url")), None)
-        if url and chave not in evitar:
-            candidatos.append((video.get("duration", 0) >= min_dur, chave, url))
+        # 4K fica mais nítido no recorte vertical; se o arquivo for enorme, usa o Full HD.
+        for tamanho in ("large", "medium", "small"):
+            v = variantes.get(tamanho) or {}
+            if v.get("url") and (tamanho != "large" or 0 < v.get("size", 0) < 70_000_000):
+                candidatos.append((video.get("duration", 0) >= min_dur, chave, v["url"]))
+                break
     return candidatos
 
 

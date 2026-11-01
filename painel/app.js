@@ -221,7 +221,7 @@ function desenharBarra() {
   $("#m-agenda").textContent = prontos || "";
   $("#m-fabrica").classList.toggle("ligado", !!d.execucao.ativa);
   const cfg = d.estado.config || {};
-  $("#m-config").classList.toggle("ligado", !cfg.gemini || !cfg.pexels);
+  $("#m-config").classList.toggle("ligado", !cfg.gemini);
   if (d.usuario) {
     $("#avatar").src = d.usuario.avatar;
     $("#perfil-nome").textContent = d.usuario.nome || d.usuario.login;
@@ -425,7 +425,7 @@ function pgConfig() {
     <div class="cartao vidro"><h2>Chaves da fábrica</h2>
       ${conhecida ? `<ul class="checklist">
         ${item(cfg.gemini, "Gemini (roteiro)", cfg.gemini ? "Cadastrada." : "Falta o segredo GEMINI_API_KEY. Sem ele a fábrica só faz vídeos de teste.")}
-        ${item(cfg.pexels, "Pexels (paisagens)", cfg.pexels ? "Cadastrada." : "Falta o segredo PEXELS_API_KEY. Sem ele as cenas usam só pinturas clássicas.")}
+        ${item(cfg.pexels || cfg.pixabay, "Paisagens (Pixabay ou Pexels)", cfg.pexels || cfg.pixabay ? "Cadastrada." : "Opcional: segredo PIXABAY_API_KEY. Sem ele, os vídeos usam só pinturas clássicas da história.", true)}
         ${item(cfg.telegram, "Telegram (avisos no celular)", cfg.telegram ? "Ligado." : "Opcional: segredos TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID.", true)}
         ${item(cfg.youtube_auto, "YouTube automático", cfg.youtube_auto ? "Ligado: aprovou, programou." : "Opcional e só depois da auditoria da Google. Até lá, você posta pelo app (1 minuto).", true)}
       </ul>` : '<p class="sub">A fábrica ainda não rodou com o painel. Isso aparece depois da próxima execução.</p>'}
