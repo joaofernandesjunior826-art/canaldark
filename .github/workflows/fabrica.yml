@@ -1,4 +1,6 @@
 name: Fábrica de Shorts
+# Nome de cada execução: o painel usa para saber se é um Reels do Instagram ou um Short.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('GitHub: {0} {1}', inputs.acao, inputs.tema) || '' }}
 
 on:
   schedule:

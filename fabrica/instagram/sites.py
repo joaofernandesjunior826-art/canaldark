@@ -385,14 +385,125 @@ def _editorial(s: dict, img: dict) -> str:
 </section>"""
 
 
+# ---- modelo 2: luxo (escuro, foto de ponta a ponta) --------------------------
+CSS_LUXO = """
+.nav{background:color-mix(in srgb,var(--fundo) 70%,transparent)}
+.hero-luxo{position:relative;height:calc(100vh - 87px);overflow:hidden;display:flex;align-items:flex-end;padding:0 64px 70px}
+.hero-luxo .fundo-foto{position:absolute;inset:0}
+.hero-luxo .fundo-foto img,.hero-luxo .fundo-foto .sem-foto{transform-origin:60% 40%}
+.hero-luxo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18) 0%,rgba(0,0,0,.1) 35%,color-mix(in srgb,var(--fundo) 88%,transparent) 100%)}
+.hero-luxo .conteudo{position:relative;z-index:1;max-width:820px}
+.hero-luxo h1{font-size:122px;margin:20px 0 22px;color:#fff}
+.hero-luxo .eyebrow{color:rgba(255,255,255,.82)}
+.hero-luxo .lead{font-size:20px;color:rgba(255,255,255,.82);max-width:560px}
+.hero-luxo .acoes{display:flex;gap:18px;margin-top:30px}
+.hero-luxo .botao.vazado{color:#fff;border-color:rgba(255,255,255,.45)}
+.vidro-card{position:absolute;right:64px;bottom:70px;z-index:1;width:300px;padding:22px 24px;border-radius:24px;color:#fff;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.vidro-card b{display:block;font-family:var(--f-titulo),serif;font-weight:var(--peso-titulo);font-size:46px;line-height:1}
+.vidro-card small{display:block;margin-top:8px;color:rgba(255,255,255,.8);font-size:15px}
+.intro{padding:90px 64px;text-align:center}
+.intro h2{font-size:76px;max-width:1000px;margin:18px auto 22px}
+.intro p{color:var(--suave);font-size:20px;max-width:720px;margin:0 auto}
+.intro .pontos{display:flex;justify-content:center;gap:34px;margin-top:34px;font-weight:600}
+.intro .pontos span{display:flex;align-items:center;gap:10px}
+.intro .pontos svg{width:20px;height:20px;color:var(--destaque)}
+.menu-precos{padding:60px 64px 40px}
+.menu-precos h2{font-size:70px;margin:12px 0 30px}
+.linha-preco{display:grid;grid-template-columns:200px 1fr auto;gap:30px;align-items:center;padding:18px 0;border-top:1px solid var(--linha)}
+.linha-preco .foto{height:130px;border-radius:18px;overflow:hidden}
+.linha-preco h3{font-size:38px}
+.linha-preco p{color:var(--suave);font-size:17px;margin-top:6px}
+.linha-preco .preco{font-family:var(--f-titulo),serif;font-weight:var(--peso-titulo);font-size:36px;color:var(--destaque);white-space:nowrap}
+.numeros-luxo{display:grid;grid-template-columns:repeat(4,1fr);margin:30px 64px;border:1px solid var(--linha);border-radius:28px;overflow:hidden}
+.numeros-luxo>div{padding:40px 30px;border-left:1px solid var(--linha)}
+.numeros-luxo>div:first-child{border-left:0}
+.numeros-luxo .num{font-size:66px;white-space:nowrap}
+.numeros-luxo p{color:var(--suave);margin-top:8px}
+.galeria{display:grid;grid-template-columns:1fr 1.25fr;gap:24px;padding:40px 64px 70px;height:640px}
+.galeria .g{border-radius:28px;overflow:hidden;position:relative}
+.hero-luxo .sem-foto span,.cta-luxo .sem-foto span,.galeria .sem-foto span{display:none}
+.galeria .g .rotulo{position:absolute;left:24px;bottom:22px;z-index:1;color:#fff;font-weight:600;font-size:17px;padding:8px 14px;border-radius:999px;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.depo-luxo{padding:100px 64px;text-align:center}
+.depo-luxo .aspas{font-family:var(--f-titulo),serif;font-size:160px;line-height:.6;color:var(--destaque);height:70px}
+.depo-luxo blockquote{font-family:var(--f-titulo),serif;font-weight:var(--peso-titulo);font-size:56px;line-height:1.12;letter-spacing:var(--esp-titulo);max-width:1040px;margin:10px auto 28px}
+.depo-luxo cite{font-style:normal;color:var(--suave)}
+.cta-luxo{position:relative;margin:20px 64px 80px;border-radius:40px;overflow:hidden;height:520px;display:grid;place-items:center;text-align:center}
+.cta-luxo .fundo-foto{position:absolute;inset:0}
+.cta-luxo::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.cta-luxo .conteudo{position:relative;z-index:1;color:#fff;padding:0 60px}
+.cta-luxo h2{font-size:86px;max-width:900px;margin:0 auto 18px}
+.cta-luxo p{font-size:20px;opacity:.85;margin-bottom:30px}
+"""
+
+
+def _luxo(s: dict, img: dict) -> str:
+    h = s["hero"]
+    linhas = "".join(
+        f'<div class="linha-preco" data-revela="sobe" data-atraso="{i * 0.12:.2f}"><div class="foto">{_img(img, f"item{i}", alt=it["nome"])}</div>'
+        f'<div><h3>{_e(it["nome"])}</h3><p>{_e(it["texto"])}</p></div><span class="preco">{_e(it.get("preco", ""))}</span></div>'
+        for i, it in enumerate(s["itens"][:3]))
+    numeros = "".join(f'<div data-revela="sobe" data-atraso="{i * 0.1:.2f}"><div class="num" data-conta="{_e(n["valor"])}">{_e(n["valor"])}</div>'
+                      f'<p>{_e(n["rotulo"])}</p></div>' for i, n in enumerate(s["numeros"][:4]))
+    pontos = "".join(f'<span data-revela="sobe" data-atraso="{0.3 + i * 0.1:.2f}">{_icone("check")}{_e(x)}</span>'
+                     for i, x in enumerate(s["sobre"].get("pontos", [])[:3]))
+    letreiro = "".join(f"<span>{_e(p)}</span><b>✦</b>" for p in s["palavras"]) * 4
+    return f"""
+<section class="hero-luxo" data-parada="0">
+  <div class="fundo-foto">{_img(img, "hero", alt=s["marca"], extra="data-kenburns")}</div>
+  <div class="conteudo">
+    <p class="eyebrow" data-revela="sobe">{_e(h["selo"])}</p>
+    <h1>{_linhas_titulo(h["titulo"])}</h1>
+    <p class="lead" data-revela="sobe" data-atraso=".45">{_e(h["subtitulo"])}</p>
+    <div class="acoes" data-revela="sobe" data-atraso=".6"><a class="botao">{_e(s["botao"])} {_icone("seta")}</a>
+      <a class="botao vazado">{_e(s.get("botao2") or "Saiba mais")}</a></div>
+  </div>
+  <div class="vidro-card" data-revela="direita" data-atraso=".8"><b>{_e(h.get("destaque", ""))}</b>
+    <small>{_e(h.get("destaque_sub", ""))}</small><small>{_estrelas()} {_e(h.get("prova", ""))}</small></div>
+</section>
+<div class="letreiro"><div data-letreiro="70">{letreiro}</div></div>
+<section class="intro" data-parada="0">
+  <p class="eyebrow" data-revela="sobe">{_e(s["sobre"]["selo"])}</p>
+  <h2 data-revela="sobe" data-atraso=".1">{_rico(s["sobre"]["titulo"])}</h2>
+  <p data-revela="sobe" data-atraso=".2">{_e(s["sobre"]["texto"])}</p>
+  <div class="pontos">{pontos}</div>
+</section>
+<section class="menu-precos" data-parada="0">
+  <p class="eyebrow" data-revela="sobe">{_e(s["secao_itens"]["selo"])}</p>
+  <h2 data-revela="sobe" data-atraso=".1">{_rico(s["secao_itens"]["titulo"])}</h2>
+  {linhas}
+</section>
+<section class="numeros-luxo" data-parada="200">{numeros}</section>
+<section class="galeria" data-parada="0">
+  <div class="g" data-revela="imagem">{_img(img, "sobre0", alt=s["marca"])}<span class="rotulo">{_e(s["palavras"][0] if s["palavras"] else s["marca"])}</span></div>
+  <div class="g" data-revela="imagem" data-atraso=".15">{_img(img, "sobre1", alt=s["marca"])}<span class="rotulo">{_e(s.get("cidade", ""))}</span></div>
+</section>
+<section class="depo-luxo" data-parada="0">
+  <div class="aspas" data-revela="zoom">“</div>
+  <blockquote data-revela="sobe" data-atraso=".1">{_e(s["depoimento"]["texto"])}</blockquote>
+  <cite data-revela="sobe" data-atraso=".25">{_estrelas()} · {_e(s["depoimento"]["autor"])}</cite>
+</section>
+<section class="cta-luxo" data-parada="60">
+  <div class="fundo-foto">{_img(img, "hero", alt=s["marca"])}</div>
+  <div class="conteudo"><h2 data-revela="sobe">{_rico(s["cta"]["titulo"])}</h2><p data-revela="sobe" data-atraso=".1">{_e(s["cta"].get("texto", ""))}</p>
+    <a class="botao" data-revela="zoom" data-atraso=".2">{_e(s["cta"].get("botao") or s["botao"])} {_icone("seta")}</a></div>
+</section>"""
+
+
 # ---- montagem final -----------------------------------------------------------
 def montar_site(s: dict, imagens: dict) -> str:
     """Devolve o HTML completo do site. `imagens` = {"hero": "img/hero.jpg", "item0": ..., "sobre0": ...}."""
-    p = paleta(s.get("cores", {}))
+    modelo = s.get("modelo") if s.get("modelo") in ("editorial", "luxo") else "editorial"
+    cores = dict(s.get("cores") or {})
+    if modelo == "luxo" and _luminancia(_hex(cores.get("fundo"), "#f6f1ea")) >= 0.2:
+        cores.update(fundo="#0e0d0c", texto="#f4efe7", superficie="#1a1816")  # o luxo é sempre escuro
+    p = paleta(cores)
     f_titulo = s.get("fonte_titulo") if s.get("fonte_titulo") in FONTES_TITULO else "Fraunces"
     f_texto = s.get("fonte_texto") if s.get("fonte_texto") in FONTES_TEXTO else "Inter"
     serifada = f_titulo in FONTES_TITULO[:5]
-    corpo = _editorial(s, imagens)
+    corpo = (_luxo if modelo == "luxo" else _editorial)(s, imagens)
+    css_modelo = CSS_LUXO if modelo == "luxo" else CSS_EDITORIAL
     links = "".join(f"<a>{_e(x)}</a>" for x in s.get("menu", [])[:4])
     inicial = _e(s["marca"][:1].upper())
     return f"""<!doctype html>
@@ -404,7 +515,7 @@ def montar_site(s: dict, imagens: dict) -> str:
 :root{{--fundo:{p["fundo"]};--texto:{p["texto"]};--destaque:{p["destaque"]};--sobre-destaque:{p["sobre_destaque"]};
   --superficie:{p["superficie"]};--suave:{p["suave"]};--linha:{p["linha"]};
   --f-titulo:"{f_titulo}";--f-texto:"{f_texto}";--peso-titulo:{500 if serifada else 700};--esp-titulo:{"-0.02em" if serifada else "-0.045em"}}}
-{CSS_BASE}{CSS_EDITORIAL}
+{CSS_BASE}{css_modelo}
 </style></head>
 <body>
 <header class="nav"><a class="logo"><i>{inicial}</i>{_e(s["marca"])}</a><nav>{links}</nav>
