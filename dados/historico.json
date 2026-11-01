@@ -21,7 +21,7 @@
   {
     "id": "20261101-175418",
     "tipo": "teste",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Davi e Golias",
     "referencia": "1 Samuel 17",
     "titulo": "[TESTE] Ele tinha só uma funda… e o gigante caiu",
@@ -35,12 +35,13 @@
     "data": "2026-11-01T17:56:32-03:00",
     "duracao_seg": 31,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-01T18:35:23-03:00"
   },
   {
     "id": "20261101-181335",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "A criação do mundo",
     "referencia": "Gênesis 1-2",
     "titulo": "Como o Universo Surgiu do Nada Segundo a Bíblia",
@@ -58,7 +59,8 @@
     "duracao_seg": 63,
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-01T18:30:53-03:00"
+    "aprovado_em": "2026-11-01T18:30:53-03:00",
+    "publicado_em": "2026-11-01T18:35:23-03:00"
   },
   {
     "id": "20261101-182315",
