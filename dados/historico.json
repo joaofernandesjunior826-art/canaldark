@@ -90,7 +90,7 @@
   {
     "id": "20261101-185648",
     "tipo": "extra",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Noé e o dilúvio",
     "referencia": "Gênesis 6-9",
     "titulo": "O Dia em que o Céu Desabou: A Verdadeira História de Noé",
@@ -109,6 +109,7 @@
     "duracao_seg": 72,
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-01T19:09:50-03:00"
+    "aprovado_em": "2026-11-01T19:09:50-03:00",
+    "publicado_em": "2026-11-01T19:48:34-03:00"
   }
 ]
