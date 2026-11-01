@@ -154,6 +154,8 @@ def executar() -> int:
 
 def teste(tema: str, arquivo_roteiro: str | None) -> None:
     pronto = json.loads(open(arquivo_roteiro, encoding="utf-8").read()) if arquivo_roteiro else None
+    if pronto and not tema:
+        tema = pronto.get("historia", "")
     item = produzir({"tipo": "extra", "tema": tema}, estado.ler_estado(), enviar=False, roteiro_pronto=pronto)
     print(f"Pronto: {config.SAIDA / item['id'] / 'short.mp4'}")
 

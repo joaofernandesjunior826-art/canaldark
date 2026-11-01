@@ -14,6 +14,10 @@ on:
         description: "Tema ou história (opcional). Vazio = próxima história da lista"
         required: false
         default: ""
+      teste:
+        description: "Só testar a montagem com um roteiro de exemplo (não precisa de chaves e não envia nada)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write  # para guardar o histórico em dados/ e não repetir histórias
@@ -61,6 +65,7 @@ jobs:
 
       - name: Ler pedidos e ver a agenda
         id: plano
+        if: ${{ !inputs.teste }}
         env:
           TEMA: ${{ inputs.tema }}
         run: |
@@ -71,17 +76,23 @@ jobs:
           fi
 
       - name: Instalar ffmpeg
-        if: steps.plano.outputs.tarefas == 'sim'
+        if: steps.plano.outputs.tarefas == 'sim' || inputs.teste
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fontconfig > /dev/null
+          sudo apt-get install -y -qq ffmpeg fontconfig > /dev/null
+          sudo apt-get install -y -qq fonts-dejavu-core > /dev/null 2>&1 || sudo apt-get install -y -qq fonts-dejavu > /dev/null 2>&1 || true
+          ffmpeg -hide_banner -version | head -1
 
       - name: Produzir e entregar
         if: steps.plano.outputs.tarefas == 'sim'
         run: python -m fabrica executar
 
+      - name: Testar a montagem (roteiro de exemplo)
+        if: inputs.teste
+        run: python -m fabrica teste --roteiro dados/roteiro_exemplo.json
+
       - name: Guardar o vídeo (Artifacts, por 7 dias)
-        if: always() && steps.plano.outputs.tarefas == 'sim'
+        if: always() && (steps.plano.outputs.tarefas == 'sim' || inputs.teste)
         uses: actions/upload-artifact@v6
         with:
           name: shorts-${{ github.run_number }}
@@ -93,7 +104,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Guardar histórico e fila
-        if: always()
+        if: always() && !inputs.teste
         run: |
           git config user.name "fabrica-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
