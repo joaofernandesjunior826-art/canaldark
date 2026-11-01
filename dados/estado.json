@@ -4,7 +4,14 @@
     "data": "",
     "n": 0
   },
-  "clipes_usados": [],
+  "clipes_usados": [
+    "commons:117022477",
+    "commons:171091061",
+    "commons:199484004",
+    "commons:37246825",
+    "commons:37246907",
+    "commons:38913681"
+  ],
   "config": {
     "gemini": false,
     "pexels": false,
