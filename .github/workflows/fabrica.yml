@@ -1,0 +1,86 @@
+name: Fábrica de Shorts
+
+on:
+  schedule:
+    # Horário em UTC. 12:17 UTC = 09:17 em Brasília. Para 2 vídeos por dia, acrescente outra linha.
+    - cron: "17 12 * * *"
+  workflow_dispatch:
+    inputs:
+      historia:
+        description: "História específica (opcional, igual ao título em dados/historias.txt)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write  # para salvar dados/historico.json e não repetir histórias
+
+concurrency:
+  group: fabrica
+  cancel-in-progress: false
+
+jobs:
+  produzir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar ffmpeg e fontes
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fontconfig
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Produzir o Short
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Ajustes opcionais em Settings > Secrets and variables > Actions > Variables
+          YT_PRIVACIDADE: ${{ vars.YT_PRIVACIDADE }}
+          VOZ: ${{ vars.VOZ }}
+          VELOCIDADE_VOZ: ${{ vars.VELOCIDADE_VOZ }}
+          DURACAO_ALVO_SEG: ${{ vars.DURACAO_ALVO_SEG }}
+          NOME_CANAL: ${{ vars.NOME_CANAL }}
+          GEMINI_MODELO: ${{ vars.GEMINI_MODELO }}
+          VOLUME_MUSICA: ${{ vars.VOLUME_MUSICA }}
+          HISTORIA: ${{ inputs.historia }}
+        run: |
+          if [ -n "$HISTORIA" ]; then
+            python -m fabrica --historia "$HISTORIA"
+          else
+            python -m fabrica
+          fi
+
+      - name: Guardar o vídeo (aba Actions > execução > Artifacts, por 7 dias)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: short-${{ github.run_number }}
+          path: |
+            saida/**/short.mp4
+            saida/**/capa.jpg
+            saida/**/roteiro.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Salvar histórico
+        if: success()
+        run: |
+          git config user.name "fabrica-bot"
+          git config user.email "fabrica-bot@users.noreply.github.com"
+          git add dados/historico.json
+          git diff --cached --quiet || git commit -m "Histórico: novo Short produzido"
+          git push

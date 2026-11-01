@@ -1,0 +1,93 @@
+# Uma história por linha: título | referência bíblica
+# A fábrica usa a próxima que ainda não virou vídeo (veja dados/historico.json).
+# Pode apagar, reordenar ou acrescentar linhas à vontade.
+A criação do mundo | Gênesis 1-2
+Adão e Eva e o fruto proibido | Gênesis 3
+Caim e Abel | Gênesis 4
+Noé e o dilúvio | Gênesis 6-9
+A Torre de Babel | Gênesis 11:1-9
+O chamado de Abraão | Gênesis 12
+Sodoma e Gomorra e a mulher de Ló | Gênesis 19
+Abraão e o sacrifício de Isaque | Gênesis 22
+Esaú vende o direito de primogenitura | Gênesis 25:29-34
+Jacó engana Isaque e recebe a bênção | Gênesis 27
+A escada de Jacó | Gênesis 28:10-22
+Jacó luta com Deus | Gênesis 32:22-32
+José vendido pelos irmãos | Gênesis 37
+José interpreta os sonhos do faraó | Gênesis 41
+José se revela aos irmãos | Gênesis 45
+Moisés salvo das águas do Nilo | Êxodo 2:1-10
+A sarça ardente | Êxodo 3
+As dez pragas do Egito | Êxodo 7-11
+A primeira Páscoa | Êxodo 12
+A abertura do Mar Vermelho | Êxodo 14
+O maná do céu | Êxodo 16
+Os Dez Mandamentos | Êxodo 19-20
+O bezerro de ouro | Êxodo 32
+A serpente de bronze | Números 21:4-9
+A jumenta de Balaão | Números 22
+Raabe e os espias | Josué 2
+A queda das muralhas de Jericó | Josué 6
+O dia em que o sol parou | Josué 10:1-15
+Gideão e os 300 | Juízes 7
+Sansão e Dalila | Juízes 16
+Rute e Noemi | Rute 1-4
+Ana e o nascimento de Samuel | 1 Samuel 1
+Deus chama o menino Samuel | 1 Samuel 3
+A arca da aliança nas mãos dos filisteus | 1 Samuel 5-6
+Davi ungido rei ainda menino | 1 Samuel 16
+Davi e Golias | 1 Samuel 17
+A amizade de Davi e Jônatas | 1 Samuel 18-20
+Davi poupa a vida de Saul | 1 Samuel 24
+Saul e a médium de En-Dor | 1 Samuel 28
+Davi e Bate-Seba | 2 Samuel 11-12
+A sabedoria de Salomão e as duas mães | 1 Reis 3:16-28
+A rainha de Sabá visita Salomão | 1 Reis 10
+Elias alimentado pelos corvos | 1 Reis 17:1-6
+Elias e a viúva de Sarepta | 1 Reis 17:7-24
+Elias e os profetas de Baal no Monte Carmelo | 1 Reis 18
+Elias sobe ao céu num carro de fogo | 2 Reis 2
+Eliseu e o azeite que não acabava | 2 Reis 4:1-7
+Naamã curado da lepra | 2 Reis 5
+O exército invisível de Eliseu | 2 Reis 6:8-23
+Ester, a rainha que salvou seu povo | Ester 1-10
+A provação de Jó | Jó 1-2
+Os três jovens na fornalha ardente | Daniel 3
+A escrita na parede | Daniel 5
+Daniel na cova dos leões | Daniel 6
+Jonas e o grande peixe | Jonas 1-2
+Jonas e Nínive | Jonas 3-4
+O anúncio do anjo a Maria | Lucas 1:26-38
+O nascimento de Jesus | Lucas 2:1-20
+Os magos do Oriente | Mateus 2:1-12
+Jesus aos 12 anos no templo | Lucas 2:41-52
+O batismo de Jesus | Mateus 3:13-17
+A tentação no deserto | Mateus 4:1-11
+A água transformada em vinho | João 2:1-11
+A pesca milagrosa | Lucas 5:1-11
+Jesus acalma a tempestade | Marcos 4:35-41
+A multiplicação dos pães e peixes | João 6:1-14
+Jesus anda sobre as águas | Mateus 14:22-33
+A cura do paralítico pelo telhado | Marcos 2:1-12
+A filha de Jairo | Marcos 5:21-43
+A mulher que tocou no manto | Marcos 5:25-34
+O bom samaritano | Lucas 10:25-37
+O filho pródigo | Lucas 15:11-32
+A ovelha perdida | Lucas 15:1-7
+Zaqueu na árvore | Lucas 19:1-10
+A ressurreição de Lázaro | João 11
+A mulher samaritana no poço | João 4:1-42
+A transfiguração | Mateus 17:1-9
+A entrada triunfal em Jerusalém | Mateus 21:1-11
+A última ceia | Lucas 22:7-23
+Jesus no Getsêmani | Mateus 26:36-46
+A negação de Pedro | Lucas 22:54-62
+A crucificação | Lucas 23:26-49
+A ressurreição de Jesus | Mateus 28:1-10
+O caminho de Emaús | Lucas 24:13-35
+Tomé e as marcas nas mãos | João 20:24-29
+O Pentecostes | Atos 2
+A conversão de Saulo no caminho de Damasco | Atos 9:1-19
+Pedro libertado da prisão por um anjo | Atos 12:1-19
+Paulo e Silas na prisão | Atos 16:16-40
+O naufrágio de Paulo em Malta | Atos 27-28
