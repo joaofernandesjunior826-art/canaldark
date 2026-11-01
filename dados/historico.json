@@ -65,7 +65,7 @@
   {
     "id": "20261101-182315",
     "tipo": "extra",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Caim e Abel",
     "referencia": "Gênesis 4",
     "titulo": "O Primeiro Homicídio da Humanidade e o Aviso Ignorado",
@@ -83,6 +83,7 @@
     "duracao_seg": 69,
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-01T18:30:37-03:00"
+    "aprovado_em": "2026-11-01T18:30:37-03:00",
+    "publicado_em": "2026-11-01T18:50:27-03:00"
   }
 ]
