@@ -1,86 +1,178 @@
-"""Roda a fábrica inteira: python -m fabrica
+"""Fábrica de Shorts. Comandos:
 
-Opções:
-  --historia "Davi e Golias"   força uma história específica (precisa estar em dados/historias.txt)
-  --sem-enviar                 só gera o vídeo, sem YouTube/Telegram
+  python -m fabrica planejar   lê os pedidos do Telegram e vê se está na hora do vídeo do dia
+  python -m fabrica executar   produz o que estiver na fila e entrega no Telegram
+  python -m fabrica teste      produz um vídeo na pasta saida/ sem enviar nada (para testar)
+      --tema "Davi e Golias"     tema ou história (opcional)
+      --roteiro arquivo.json     usa um roteiro pronto em vez de chamar o Gemini
 """
 import argparse
 import json
+import os
+import shutil
 import sys
 import traceback
-from datetime import datetime, timezone
 
-from . import cenas, config, montagem, narracao, publicar, roteiro
+from . import cenas, config, estado, montagem, narracao, pedidos, roteiro, telegram, youtube
 
 
-def produzir(historia: str | None, enviar: bool) -> None:
-    if historia:
-        linhas = (config.DADOS / "historias.txt").read_text(encoding="utf-8").splitlines()
-        achada = next((l for l in linhas if l.split("|")[0].strip().lower() == historia.lower()), None)
-        if not achada:
-            sys.exit(f"História '{historia}' não está em dados/historias.txt")
-        titulo, ref = (p.strip() for p in achada.split("|"))
+# ---- Planejamento -----------------------------------------------------------
+def video_do_dia_pendente(e: dict) -> bool:
+    agora = estado.agora()
+    previstos = sum(1 for h in config.HORARIOS if agora.hour >= h)
+    feitos = sum(1 for v in estado.historico()
+                 if v.get("tipo") == "novo" and v.get("data", "")[:10] == estado.hoje())
+    na_fila = sum(1 for t in e["fila"] if t["tipo"] == "novo")
+    return feitos + na_fila < previstos
+
+
+def planejar(forcar: bool, tema: str) -> None:
+    e = estado.ler_estado()
+    mudou = pedidos.processar(e) > 0 if telegram.ativo() else False
+    novos = []
+
+    if not config.GEMINI_API_KEY:
+        print("Falta cadastrar GEMINI_API_KEY nos Secrets do GitHub; nada será produzido.")
+    elif forcar:  # botão "Run workflow" no GitHub
+        tipo = "novo" if video_do_dia_pendente(e) else "extra"
+        novos.append({"tipo": tipo, "tema": tema})
+    elif estado.falhas_hoje(e) >= config.MAX_FALHAS_POR_DIA:
+        print("Muitas falhas hoje; a fábrica volta amanhã.")
+    elif video_do_dia_pendente(e):
+        novos.append({"tipo": "novo"})
+
+    if novos or mudou:
+        e["fila"].extend(novos)
+        estado.salvar_estado(e)
+    tem = bool(e["fila"]) and bool(config.GEMINI_API_KEY)
+    print(f"Pedidos na fila: {len(e['fila'])}")
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"tarefas={'sim' if tem else 'nao'}\n")
+
+
+# ---- Produção ---------------------------------------------------------------
+def produzir(tarefa: dict, e: dict, enviar: bool = True, roteiro_pronto: dict | None = None) -> dict:
+    ajuste = tarefa.get("ajuste", "")
+    if tarefa["tipo"] == "refazer":
+        original = estado.achar_video(tarefa["origem"])
+        if not original:
+            raise RuntimeError("Não achei o vídeo original para refazer.")
+        titulo, ref = original["historia"], original.get("referencia", "")
+    elif tarefa.get("tema"):
+        titulo, ref = roteiro.achar_historia(tarefa["tema"]) or (tarefa["tema"], "")
     else:
         titulo, ref = roteiro.proxima_historia()
-    print(f"== História: {titulo} ({ref})")
+    print(f"== {tarefa['tipo'].upper()}: {titulo} {f'({ref})' if ref else ''}"
+          f"{f' | ajuste: {ajuste}' if ajuste else ''}")
 
-    carimbo = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-    pasta = (config.SAIDA / carimbo).resolve()
+    video_id = estado.agora().strftime("%Y%m%d-%H%M%S")
+    pasta = config.SAIDA / video_id
     pasta.mkdir(parents=True, exist_ok=True)
 
-    print("== 1/5 Roteiro")
-    texto = roteiro.gerar_roteiro(titulo, ref)
+    print("== 1/4 Roteiro")
+    recentes = [v["titulo"] for v in estado.historico()[-8:] if v.get("titulo")]
+    texto = roteiro_pronto or roteiro.gerar_roteiro(titulo, ref, ajuste, recentes)
     (pasta / "roteiro.json").write_text(json.dumps(texto, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Título: {texto['titulo']}  |  {len(texto['cenas'])} cenas")
+    print(f"Título: {texto['titulo']}")
 
-    print("== 2/5 Narração e 3/5 Cenas")
-    usados: set = set()
+    print("== 2/4 Narração e cenas")
+    evitar = set(e["clipes_usados"])
     partes = []
     for i, cena in enumerate(texto["cenas"]):
         audio = pasta / f"voz_{i:02d}.mp3"
         palavras = narracao.narrar(cena["texto"], audio)
-        video = cenas.baixar_cena(cena.get("busca") or "dramatic sky", pasta / f"cena_{i:02d}.mp4", usados)
-        partes.append({"audio": audio, "palavras": palavras, "video": video})
+        dur = montagem.duracao(audio) + montagem.PAUSA
+        arquivo = pasta / f"cena_{i:02d}.mp4"
+        chave = cenas.baixar_cena(cena["busca"], arquivo, evitar, dur)
+        partes.append({"audio": audio, "palavras": palavras, "dur": dur,
+                       "video": arquivo if chave else None})
+    e["clipes_usados"] = list(dict.fromkeys(e["clipes_usados"] + sorted(evitar)))
 
-    print("== 4/5 Montagem")
-    short = montagem.montar(partes, pasta)
+    print("== 3/4 Montagem")
+    short = montagem.montar(partes, texto.get("capa", ""), pasta)
     dur = montagem.duracao(short)
-    capa = montagem.capa(pasta / "video_mudo.mp4", texto.get("capa") or titulo, pasta / "capa.jpg")
-    print(f"Short pronto: {short} ({dur:.0f} s)")
-    if dur > 180:
-        print("ATENÇÃO: passou de 3 minutos; o YouTube não vai tratar como Short.")
+    capa = montagem.capa(pasta / "video_mudo.mp4", texto.get("capa") or texto["titulo"], pasta / "capa.jpg")
+    print(f"Short pronto: {short} ({dur:.0f} s, {short.stat().st_size / 1e6:.1f} MB)")
 
-    video_id = None
+    item = {"id": video_id, "tipo": tarefa["tipo"], "historia": titulo,
+            "referencia": texto.get("referencia") or ref, "titulo": texto["titulo"],
+            "data": estado.agora().isoformat(timespec="seconds"), "duracao_seg": round(dur)}
+    if ajuste:
+        item["ajuste"] = ajuste
+    if tarefa.get("origem"):
+        item["origem"] = tarefa["origem"]
+
     if enviar:
-        print("== 5/5 Publicação")
-        if publicar.youtube_configurado():
-            video_id = publicar.enviar_youtube(short, capa, texto)
-        else:
-            print("YouTube não configurado; o vídeo fica só no Telegram e nos artefatos do GitHub.")
-        publicar.avisar_telegram(short, texto, video_id)
+        print("== 4/4 Entrega")
+        if youtube.configurado():
+            item["youtube"] = youtube.enviar(short, capa, texto)
+        item["telegram"] = telegram.entregar_short(short, item, texto, dur)
+        estado.adicionar_video(item)
 
-    roteiro.registrar_historico({
-        "historia": titulo, "titulo": texto["titulo"], "data": carimbo,
-        "duracao_seg": round(dur), "youtube_id": video_id,
-    })
-    for temporario in pasta.glob("clipe_*.mp4"):
-        temporario.unlink()
-    (pasta / "video_mudo.mp4").unlink(missing_ok=True)
+    for temporario in [*pasta.glob("clipe_*.mp4"), *pasta.glob("cena_*.mp4"), *pasta.glob("voz_*.mp3"),
+                       pasta / "video_mudo.mp4", pasta / "clipes.txt"]:
+        temporario.unlink(missing_ok=True)
+    return item
+
+
+def _resumo_erro(erro: Exception) -> str:
+    return (str(erro).strip().splitlines() or [type(erro).__name__])[-1][:400]
+
+
+def executar() -> int:
+    e = estado.ler_estado()
+    if not e["fila"]:
+        print("Nada na fila.")
+        return 0
+    falhou = False
+    for _ in range(config.MAX_POR_EXECUCAO):
+        if not e["fila"]:
+            break
+        tarefa = e["fila"].pop(0)
+        estado.salvar_estado(e)  # tira da fila antes: um erro não vira repetição infinita
+        try:
+            produzir(tarefa, e)
+        except Exception as erro:
+            falhou = True
+            traceback.print_exc()
+            resumo = telegram.html(_resumo_erro(erro))
+            if tarefa["tipo"] == "novo":
+                n = estado.registrar_falha(e)
+                if n >= config.MAX_FALHAS_POR_DIA:
+                    msg = f"⚠️ Não consegui fazer o vídeo de hoje ({n} tentativas). Paro por hoje e volto amanhã."
+                else:
+                    msg = f"⚠️ Não consegui fazer o vídeo de hoje (tentativa {n} de {config.MAX_FALHAS_POR_DIA}). Tento de novo na próxima hora."
+            else:
+                msg = "⚠️ Não consegui atender o seu pedido. Pode pedir de novo daqui a pouco."
+            if config.LINK_EXECUCAO:
+                msg += f"\n\nDetalhes: {config.LINK_EXECUCAO}"
+            telegram.enviar_texto(f"{msg}\n\nErro: <code>{resumo}</code>")
+        estado.salvar_estado(e)
+    return 1 if falhou else 0
+
+
+def teste(tema: str, arquivo_roteiro: str | None) -> None:
+    pronto = json.loads(open(arquivo_roteiro, encoding="utf-8").read()) if arquivo_roteiro else None
+    item = produzir({"tipo": "extra", "tema": tema}, estado.ler_estado(), enviar=False, roteiro_pronto=pronto)
+    print(f"Pronto: {config.SAIDA / item['id'] / 'short.mp4'}")
 
 
 def main() -> None:
-    p = argparse.ArgumentParser()
-    p.add_argument("--historia")
-    p.add_argument("--sem-enviar", action="store_true")
+    p = argparse.ArgumentParser(description="Fábrica de Shorts")
+    p.add_argument("acao", choices=["planejar", "executar", "teste"])
+    p.add_argument("--forcar", action="store_true", help="planejar: pede um vídeo agora")
+    p.add_argument("--tema", default=os.environ.get("TEMA", ""), help="tema ou história")
+    p.add_argument("--roteiro", help="teste: arquivo JSON com um roteiro pronto")
     args = p.parse_args()
-    try:
-        produzir(args.historia, enviar=not args.sem_enviar)
-    except Exception:
-        erro = traceback.format_exc()
-        print(erro)
-        if not args.sem_enviar:
-            publicar.avisar_erro(erro[-1500:])
-        sys.exit(1)
+    if not shutil.which("ffmpeg") and args.acao != "planejar":
+        sys.exit("O ffmpeg não está instalado.")
+    if args.acao == "planejar":
+        planejar(args.forcar, args.tema.strip())
+    elif args.acao == "executar":
+        sys.exit(executar())
+    else:
+        teste(args.tema.strip(), args.roteiro)
 
 
 if __name__ == "__main__":

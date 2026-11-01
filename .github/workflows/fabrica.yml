@@ -2,73 +2,89 @@ name: Fábrica de Shorts
 
 on:
   schedule:
-    # Horário em UTC. 12:17 UTC = 09:17 em Brasília. Para 2 vídeos por dia, acrescente outra linha.
-    - cron: "17 12 * * *"
+    # De hora em hora, das 07:23 às 23:23 (Brasília). Cada execução:
+    #   1) lê seus pedidos no Telegram (refazer, ajuste, vídeo extra);
+    #   2) se já passou do horário do vídeo do dia (variável HORARIOS, padrão 9h) e ele ainda
+    #      não foi feito, produz o vídeo e manda para o seu Telegram.
+    # Quando não há nada a fazer, a execução leva uns 20 segundos.
+    - cron: "23 10-23,0-2 * * *"
   workflow_dispatch:
     inputs:
-      historia:
-        description: "História específica (opcional, igual ao título em dados/historias.txt)"
+      tema:
+        description: "Tema ou história (opcional). Vazio = próxima história da lista"
         required: false
         default: ""
 
 permissions:
-  contents: write  # para salvar dados/historico.json e não repetir histórias
+  contents: write  # para guardar o histórico em dados/ e não repetir histórias
 
 concurrency:
   group: fabrica
   cancel-in-progress: false
 
 jobs:
-  produzir:
+  fabrica:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      # Ajustes opcionais: Settings > Secrets and variables > Actions > Variables
+      HORARIOS: ${{ vars.HORARIOS }}
+      DURACAO_ALVO_SEG: ${{ vars.DURACAO_ALVO_SEG }}
+      VOZ: ${{ vars.VOZ }}
+      VELOCIDADE_VOZ: ${{ vars.VELOCIDADE_VOZ }}
+      VOLUME_MUSICA: ${{ vars.VOLUME_MUSICA }}
+      NOME_CANAL: ${{ vars.NOME_CANAL }}
+      GEMINI_MODELO: ${{ vars.GEMINI_MODELO }}
+      YT_ENVIO_AUTOMATICO: ${{ vars.YT_ENVIO_AUTOMATICO }}
+      YT_PRIVACIDADE: ${{ vars.YT_PRIVACIDADE }}
+      YT_HORARIO: ${{ vars.YT_HORARIO }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
 
-      - name: Instalar ffmpeg e fontes
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fontconfig
-
       - name: Instalar dependências
-        run: pip install -r requirements.txt
-
-      - name: Produzir o Short
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
-          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
-          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # Ajustes opcionais em Settings > Secrets and variables > Actions > Variables
-          YT_PRIVACIDADE: ${{ vars.YT_PRIVACIDADE }}
-          VOZ: ${{ vars.VOZ }}
-          VELOCIDADE_VOZ: ${{ vars.VELOCIDADE_VOZ }}
-          DURACAO_ALVO_SEG: ${{ vars.DURACAO_ALVO_SEG }}
-          NOME_CANAL: ${{ vars.NOME_CANAL }}
-          GEMINI_MODELO: ${{ vars.GEMINI_MODELO }}
-          VOLUME_MUSICA: ${{ vars.VOLUME_MUSICA }}
-          HISTORIA: ${{ inputs.historia }}
         run: |
-          if [ -n "$HISTORIA" ]; then
-            python -m fabrica --historia "$HISTORIA"
+          pip install -q -r requirements.txt
+          if [ "$YT_ENVIO_AUTOMATICO" = "sim" ]; then pip install -q -r requirements-youtube.txt; fi
+
+      - name: Ler pedidos e ver a agenda
+        id: plano
+        env:
+          TEMA: ${{ inputs.tema }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python -m fabrica planejar --forcar
           else
-            python -m fabrica
+            python -m fabrica planejar
           fi
 
-      - name: Guardar o vídeo (aba Actions > execução > Artifacts, por 7 dias)
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Instalar ffmpeg
+        if: steps.plano.outputs.tarefas == 'sim'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core fontconfig > /dev/null
+
+      - name: Produzir e entregar
+        if: steps.plano.outputs.tarefas == 'sim'
+        run: python -m fabrica executar
+
+      - name: Guardar o vídeo (Artifacts, por 7 dias)
+        if: always() && steps.plano.outputs.tarefas == 'sim'
+        uses: actions/upload-artifact@v6
         with:
-          name: short-${{ github.run_number }}
+          name: shorts-${{ github.run_number }}
           path: |
             saida/**/short.mp4
             saida/**/capa.jpg
@@ -76,11 +92,16 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Salvar histórico
-        if: success()
+      - name: Guardar histórico e fila
+        if: always()
         run: |
           git config user.name "fabrica-bot"
-          git config user.email "fabrica-bot@users.noreply.github.com"
-          git add dados/historico.json
-          git diff --cached --quiet || git commit -m "Histórico: novo Short produzido"
-          git push
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dados/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -q -m "Fábrica: histórico atualizado"
+          for i in 1 2 3; do
+            git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep 5
+          done
+          exit 1

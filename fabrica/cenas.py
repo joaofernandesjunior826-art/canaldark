@@ -7,70 +7,85 @@ import requests
 from . import config
 
 RESERVAS = ["dramatic sky clouds", "desert sunset", "ancient ruins", "light rays clouds",
-            "ocean waves storm", "candle flame dark", "mountains fog", "starry night sky"]
+            "ocean waves storm", "candle flame dark", "mountains fog", "starry night sky",
+            "wheat field wind", "old stone wall", "sunrise over hills", "river flowing rocks"]
 
 
-def _pexels(busca: str, usados: set) -> str | None:
+def _pexels(busca: str, evitar: set, min_dur: float) -> list[tuple[bool, str, str]]:
     if not config.PEXELS_API_KEY:
-        return None
+        return []
     r = requests.get("https://api.pexels.com/videos/search", timeout=30,
                      headers={"Authorization": config.PEXELS_API_KEY},
-                     params={"query": busca, "orientation": "portrait", "per_page": 15})
+                     params={"query": busca, "orientation": "portrait", "size": "medium", "per_page": 30})
     if r.status_code != 200:
         print(f"Pexels HTTP {r.status_code} para '{busca}'")
-        return None
+        return []
+    candidatos = []
     for video in r.json().get("videos", []):
-        if video["id"] in usados or video.get("duration", 0) < 3:
+        chave = f"pexels:{video['id']}"
+        if chave in evitar:
             continue
         arquivos = [a for a in video.get("video_files", [])
-                    if a.get("height") and a.get("width") and a["height"] >= a["width"]
-                    and a.get("file_type") == "video/mp4"]
-        if not arquivos:
-            continue
-        # O mais próximo de 1920 de altura, sem baixar arquivos gigantes (4K).
-        melhor = min(arquivos, key=lambda a: abs(a["height"] - 1920))
-        usados.add(video["id"])
-        return melhor["link"]
-    return None
+                    if a.get("height") and a.get("width") and a["height"] > a["width"]
+                    and a.get("file_type") == "video/mp4" and a.get("link")]
+        if arquivos:
+            # O mais perto de 1920 de altura: boa qualidade sem baixar arquivos 4K enormes.
+            melhor = min(arquivos, key=lambda a: abs(a["height"] - 1920))
+            candidatos.append((video.get("duration", 0) >= min_dur, chave, melhor["link"]))
+    return candidatos
 
 
-def _pixabay(busca: str, usados: set) -> str | None:
+def _pixabay(busca: str, evitar: set, min_dur: float) -> list[tuple[bool, str, str]]:
     if not config.PIXABAY_API_KEY:
-        return None
+        return []
     r = requests.get("https://pixabay.com/api/videos/", timeout=30,
-                     params={"key": config.PIXABAY_API_KEY, "q": busca, "per_page": 20,
+                     params={"key": config.PIXABAY_API_KEY, "q": busca, "per_page": 30,
                              "safesearch": "true"})
     if r.status_code != 200:
         print(f"Pixabay HTTP {r.status_code} para '{busca}'")
-        return None
+        return []
+    candidatos = []
     for video in r.json().get("hits", []):
-        if f"px{video['id']}" in usados:
-            continue
+        chave = f"pixabay:{video['id']}"
         variantes = video.get("videos", {})
-        for tam in ("large", "medium", "small"):
-            if variantes.get(tam, {}).get("url"):
-                usados.add(f"px{video['id']}")
-                return variantes[tam]["url"]
-    return None
+        url = next((variantes[t]["url"] for t in ("large", "medium", "small")
+                    if variantes.get(t, {}).get("url")), None)
+        if url and chave not in evitar:
+            candidatos.append((video.get("duration", 0) >= min_dur, chave, url))
+    return candidatos
 
 
-def baixar_cena(busca: str, destino: Path, usados: set) -> Path | None:
-    """Baixa um vídeo para a cena. Devolve None se nada for encontrado (vira fundo animado)."""
-    tentativas = [busca, " ".join(busca.split()[:2]), random.choice(RESERVAS)]
-    for termo in tentativas:
+def _baixar(url: str, destino: Path) -> bool:
+    try:
+        with requests.get(url, stream=True, timeout=120) as r:
+            r.raise_for_status()
+            with open(destino, "wb") as f:
+                for bloco in r.iter_content(1 << 20):
+                    f.write(bloco)
+        return destino.stat().st_size > 100_000
+    except requests.RequestException as e:
+        print(f"Download falhou: {e}")
+        return False
+
+
+def baixar_cena(busca: str, destino: Path, evitar: set, min_dur: float) -> str | None:
+    """Baixa um vídeo para a cena e devolve a chave dele (para não repetir em outros vídeos).
+    Devolve None se nada for encontrado; a cena vira um fundo animado."""
+    termos = [busca, " ".join(busca.split()[:2]), random.choice(RESERVAS)]
+    for termo in dict.fromkeys(termos):
         for fonte in (_pexels, _pixabay):
             try:
-                link = fonte(termo, usados)
-            except requests.RequestException as e:
+                candidatos = fonte(termo, evitar, min_dur)
+            except (requests.RequestException, ValueError) as e:
                 print(f"Erro buscando '{termo}': {e}")
-                link = None
-            if link:
-                with requests.get(link, stream=True, timeout=120) as r:
-                    r.raise_for_status()
-                    with open(destino, "wb") as f:
-                        for bloco in r.iter_content(1 << 20):
-                            f.write(bloco)
-                print(f"Cena '{busca}' -> {fonte.__name__[1:]} ('{termo}')")
-                return destino
+                continue
+            # Prefere vídeos que cobrem a cena inteira e sorteia entre os melhores (mais variedade).
+            melhores = ([c for c in candidatos if c[0]] or candidatos)[:6]
+            random.shuffle(melhores)
+            for _, chave, url in melhores:
+                if _baixar(url, destino):
+                    evitar.add(chave)
+                    print(f"Cena '{busca}': {chave} (busca '{termo}')")
+                    return chave
     print(f"Nenhum vídeo para '{busca}'; usando fundo animado.")
     return None
