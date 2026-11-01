@@ -2,25 +2,35 @@ name: Fábrica de Shorts
 
 on:
   schedule:
-    # De hora em hora, das 07:23 às 23:23 (Brasília). Cada execução:
-    #   1) lê seus pedidos no Telegram (refazer, ajuste, vídeo extra);
-    #   2) se já passou do horário do vídeo do dia (variável HORARIOS, padrão 9h) e ele ainda
-    #      não foi feito, produz o vídeo e manda para o seu Telegram.
-    # Quando não há nada a fazer, a execução leva uns 20 segundos.
+    # De hora em hora, das 07:23 às 23:23 (Brasília): lê os pedidos do Telegram e, se já passou
+    # do horário do vídeo do dia (variável HORARIOS, padrão 9h), produz o vídeo.
     - cron: "23 10-23,0-2 * * *"
+  push:
+    # Cada botão do painel grava um pedido em dados/pedidos/ e isso dispara a fábrica na hora.
+    paths:
+      - "dados/pedidos/**"
   workflow_dispatch:
     inputs:
-      tema:
-        description: "Tema ou história (opcional). Vazio = próxima história da lista"
+      acao:
+        description: "O que fazer"
+        type: choice
+        options: [produzir, teste, aprovar, refazer, descartar, publicado]
+        default: produzir
+      id:
+        description: "Vídeo (para aprovar, refazer, descartar ou marcar como publicado)"
         required: false
         default: ""
-      teste:
-        description: "Só testar a montagem com um roteiro de exemplo (não precisa de chaves e não envia nada)"
-        type: boolean
-        default: false
+      tema:
+        description: "Tema ou história (opcional, para produzir)"
+        required: false
+        default: ""
+      ajuste:
+        description: "O que mudar (opcional, para refazer)"
+        required: false
+        default: ""
 
 permissions:
-  contents: write  # para guardar o histórico em dados/ e não repetir histórias
+  contents: write  # guardar o histórico em dados/ e as prévias dos vídeos
 
 concurrency:
   group: fabrica
@@ -39,6 +49,7 @@ jobs:
       YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
       # Ajustes opcionais: Settings > Secrets and variables > Actions > Variables
       HORARIOS: ${{ vars.HORARIOS }}
       DURACAO_ALVO_SEG: ${{ vars.DURACAO_ALVO_SEG }}
@@ -47,9 +58,15 @@ jobs:
       VOLUME_MUSICA: ${{ vars.VOLUME_MUSICA }}
       NOME_CANAL: ${{ vars.NOME_CANAL }}
       GEMINI_MODELO: ${{ vars.GEMINI_MODELO }}
+      PAINEL_URL: ${{ vars.PAINEL_URL }}
       YT_ENVIO_AUTOMATICO: ${{ vars.YT_ENVIO_AUTOMATICO }}
       YT_PRIVACIDADE: ${{ vars.YT_PRIVACIDADE }}
       YT_HORARIO: ${{ vars.YT_HORARIO }}
+      # Pedido feito pelo botão "Run workflow"
+      ACAO: ${{ inputs.acao }}
+      VIDEO_ID: ${{ inputs.id }}
+      TEMA: ${{ inputs.tema }}
+      AJUSTE: ${{ inputs.ajuste }}
     steps:
       - uses: actions/checkout@v6
 
@@ -63,57 +80,60 @@ jobs:
           pip install -q -r requirements.txt
           if [ "$YT_ENVIO_AUTOMATICO" = "sim" ]; then pip install -q -r requirements-youtube.txt; fi
 
-      - name: Ler pedidos e ver a agenda
+      - name: Pedidos
         id: plano
-        if: ${{ !inputs.teste }}
-        env:
-          TEMA: ${{ inputs.tema }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            python -m fabrica planejar --forcar
-          else
-            python -m fabrica planejar
-          fi
+        run: python -m fabrica planejar
 
-      - name: Instalar ffmpeg
-        if: steps.plano.outputs.tarefas == 'sim' || inputs.teste
+      - name: Preparar a fábrica
+        if: steps.plano.outputs.producao == 'sim'
         run: |
-          sudo rm -f /var/lib/man-db/auto-update  # evita a etapa lenta de atualizar manuais
+          sudo rm -f /var/lib/man-db/auto-update
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends ffmpeg fontconfig > /dev/null
           sudo apt-get install -y -qq --no-install-recommends fonts-dejavu-core > /dev/null 2>&1 \
             || sudo apt-get install -y -qq --no-install-recommends fonts-dejavu > /dev/null 2>&1 || true
           ffmpeg -hide_banner -version | head -1
 
-      - name: Produzir e entregar
-        if: steps.plano.outputs.tarefas == 'sim'
-        run: python -m fabrica executar
+      # As 8 estações. Os nomes começam com o número da estação: o painel usa isso para
+      # mostrar ao vivo em qual estação o vídeo está.
+      - name: 1 Pauta
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa pauta
+      - name: 2 Roteiro
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa roteiro
+      - name: 3 Narração
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa narracao
+      - name: 4 Cenas
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa cenas
+      - name: 5 Montagem
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa montagem
+      - name: 6 Shorts
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa shorts
+      - name: 7 Thumbnail
+        if: steps.plano.outputs.producao == 'sim'
+        run: python -m fabrica etapa thumbnail
+      - name: 8 Agenda
+        if: steps.plano.outputs.producao == 'sim' || steps.plano.outputs.publicar == 'sim'
+        run: python -m fabrica etapa agenda
 
-      - name: Testar a montagem (roteiro de exemplo)
-        if: inputs.teste
-        run: python -m fabrica teste --roteiro dados/roteiro_exemplo.json
-
-      - name: Guardar o vídeo (Artifacts, por 7 dias)
-        if: always() && (steps.plano.outputs.tarefas == 'sim' || inputs.teste)
-        uses: actions/upload-artifact@v6
-        with:
-          name: shorts-${{ github.run_number }}
-          path: |
-            saida/**/short.mp4
-            saida/**/capa.jpg
-            saida/**/roteiro.json
-          retention-days: 7
-          if-no-files-found: ignore
+      - name: Avisar falha
+        if: failure()
+        run: python -m fabrica falha
 
       - name: Guardar histórico e fila
-        if: always() && !inputs.teste
+        if: always()
         run: |
           git config user.name "fabrica-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dados/
+          git add -A dados/
           if git diff --cached --quiet; then exit 0; fi
           git commit -q -m "Fábrica: histórico atualizado"
-          for i in 1 2 3; do
+          for i in 1 2 3 4 5; do
             git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q origin "HEAD:${GITHUB_REF_NAME}" && exit 0
             sleep 5
           done

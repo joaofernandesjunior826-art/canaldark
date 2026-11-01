@@ -1,4 +1,5 @@
-"""Bot do Telegram: entrega cada Short no seu celular e recebe seus pedidos (refazer, ajustar, novo)."""
+"""Bot do Telegram (opcional): avisa no celular quando há vídeo esperando aprovação e recebe
+pedidos rápidos (aprovar, refazer, ajustar, novo). O painel faz tudo isso também."""
 import json
 from pathlib import Path
 
@@ -27,6 +28,10 @@ def chamar(metodo: str, dados: dict | None = None, arquivos: dict | None = None,
         print(f"Telegram ({metodo}) recusou: {resposta.get('description')}")
         return None
     return resposta["result"]
+
+
+def _botao_painel() -> list:
+    return [[{"text": "📱 Abrir o painel", "url": config.PAINEL_URL}]] if config.PAINEL_URL else []
 
 
 def enviar_texto(texto: str, responder_a: int | None = None, botoes: list | None = None) -> int | None:
@@ -79,56 +84,54 @@ def configurar_comandos() -> None:
 
 
 # ---- Mensagens prontas ------------------------------------------------------
-def entregar_short(video: Path, item: dict, roteiro: dict, duracao: float) -> list[int]:
-    """Manda o Short com os botões e, em seguida, os textos prontos para copiar."""
+def avisar_novo(video: Path, item: dict) -> list[int]:
+    """Vídeo novo esperando aprovação: manda o vídeo com os botões Aprovar e Refazer."""
     if not ativo():
         return []
-    linhas = [f"🎬 <b>{html(roteiro['titulo'])}</b>",
-              f"📖 {html(roteiro.get('referencia', ''))} · ⏱ {duracao:.0f} s"]
+    linhas = [f"🎬 <b>{html(item['titulo'])}</b>",
+              f"📖 {html(item.get('referencia', ''))} · ⏱ {item.get('duracao_seg', 0)} s"]
     if item.get("ajuste"):
         linhas.append(f"✏️ Ajuste aplicado: <i>{html(item['ajuste'][:200])}</i>")
-    yt = item.get("youtube")
-    if yt:
-        quando = f"agendado para {yt['quando']}" if yt.get("quando") else f"como {yt['privacidade']}"
-        linhas += ["", f"✅ Já foi para o YouTube ({quando}). Para mudar ou apagar: "
-                       f"https://studio.youtube.com/video/{yt['id']}/edit"]
-    else:
-        linhas += ["", "✅ <b>Gostou?</b> Salve o vídeo e poste pelo app do YouTube "
-                       "(os textos estão na mensagem abaixo)."]
-    linhas.append("🔄 <b>Não gostou?</b> Toque em Refazer ou <b>responda a este vídeo</b> dizendo o que mudar.")
-    botoes = [[{"text": "🔄 Refazer", "callback_data": f"refazer:{item['id']}"}]]
-
-    ids = []
-    msg_video = enviar_video(video, "\n".join(linhas), botoes, duracao)
-    if msg_video:
-        ids.append(msg_video)
-    else:
-        aviso = "\n\n⚠️ Não consegui anexar o vídeo aqui."
-        if config.LINK_EXECUCAO:
-            aviso += f" Baixe em Artifacts: {config.LINK_EXECUCAO}"
+    linhas += ["", "Esperando a sua aprovação. Aprove aqui ou no painel; se não gostou, toque em "
+                   "Refazer ou <b>responda a este vídeo</b> dizendo o que mudar."]
+    botoes = [[{"text": "✅ Aprovar", "callback_data": f"aprovar:{item['id']}"},
+               {"text": "🔄 Refazer", "callback_data": f"refazer:{item['id']}"}]] + _botao_painel()
+    msg = enviar_video(video, "\n".join(linhas), botoes, item.get("duracao_seg", 0))
+    if not msg:
+        aviso = "\n\n⚠️ Não consegui anexar o vídeo aqui; assista no painel."
         msg = enviar_texto("\n".join(linhas) + aviso, botoes=botoes)
-        if msg:
-            ids.append(msg)
+    return [msg] if msg else []
 
-    titulo = roteiro["titulo"]
+
+def avisar_aprovado(item: dict | None) -> None:
+    """Aprovado sem envio automático: manda os textos prontos e o passo a passo para postar."""
+    if not ativo() or not item:
+        return
+    titulo = item["titulo"]
     if len(titulo) + 8 <= 100 and "#shorts" not in titulo.lower():
         titulo += " #Shorts"
-    textos = (f"📋 <b>Textos para o YouTube</b> (toque no texto para copiar)\n\n"
-              f"<b>Título</b>\n<code>{html(titulo)}</code>\n\n"
-              f"<b>Descrição</b> (opcional)\n<code>{html(roteiro.get('descricao', ''))}</code>\n\n"
-              f"📱 <b>Como postar:</b> abra o vídeo acima, toque em ⋮ › Salvar na galeria. "
-              f"No app do YouTube: + › Enviar um vídeo › escolha o vídeo › cole o título › "
-              f"Publicar (ou Programar).")
-    if not yt:
-        msg_textos = enviar_texto(textos, responder_a=ids[0] if ids else None)
-        if msg_textos:
-            ids.append(msg_textos)
-    return ids
+    texto = (f"✅ <b>Aprovado!</b> Agora é só postar.\n\n"
+             f"<b>Título</b> (toque para copiar)\n<code>{html(titulo)}</code>\n\n"
+             f"<b>Descrição</b> (opcional)\n<code>{html(item.get('descricao', ''))}</code>\n\n"
+             f"📱 <b>Como postar:</b> abra o vídeo, toque em ⋮ › Salvar na galeria. No app do YouTube: "
+             f"+ › Enviar um vídeo › escolha o vídeo › cole o título › Publicar (ou Programar). "
+             f"Depois marque como publicado no painel.")
+    enviar_texto(texto, responder_a=(item.get("telegram") or [None])[0], botoes=_botao_painel())
+
+
+def avisar_programado(item: dict) -> None:
+    yt = item.get("youtube") or {}
+    quando = yt.get("agendado_para")
+    texto = (f"📅 <b>{html(item['titulo'])}</b> foi para o YouTube "
+             + (f"e está programado para {quando[8:10]}/{quando[5:7]} às {quando[11:16]}." if quando
+                else f"como {html(yt.get('privacidade', 'privado'))}.")
+             + f"\nhttps://studio.youtube.com/video/{yt.get('id', '')}/edit")
+    enviar_texto(texto, responder_a=(item.get("telegram") or [None])[0])
 
 
 AJUDA = (
     "🤖 <b>Fábrica de Shorts</b>\n\n"
-    "Todo dia chega aqui um Short novo. Se gostar, salve e poste no YouTube.\n\n"
+    "Todo dia chega aqui um Short novo para você aprovar. Tudo também pode ser feito pelo painel.\n\n"
     "<b>Pedidos</b>\n"
     "/novo — faz um vídeo extra com a próxima história da lista\n"
     "/novo <i>Sansão e Dalila</i> — vídeo extra sobre o tema que você escrever\n"
@@ -136,5 +139,5 @@ AJUDA = (
     "/refazer <i>mais curto e com mais suspense</i> — refaz com esse ajuste\n"
     "/status — mostra a fila e o último vídeo\n\n"
     "Você também pode <b>responder a um vídeo</b> dizendo o que mudar.\n\n"
-    "⏱ Eu confiro as mensagens de hora em hora, das 7h às 23h."
+    "⏱ Eu confiro as mensagens de hora em hora, das 7h às 23h. Pelo painel é na hora."
 )

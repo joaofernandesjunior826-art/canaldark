@@ -1,0 +1,8 @@
+{
+  "name": "clover-fabrica-painel",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  }
+}

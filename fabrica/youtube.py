@@ -1,6 +1,6 @@
-"""Envio automático ao YouTube. OPCIONAL: só use depois que a Google aprovar a auditoria do seu
-projeto. Antes disso, todo vídeo enviado pela API fica TRAVADO como privado, sem recurso
-(https://support.google.com/youtube/answer/7300965). Por isso vem desligado."""
+"""Envio automático ao YouTube. OPCIONAL: só funciona de verdade depois que a Google aprovar a
+auditoria do seu projeto. Antes disso, todo vídeo enviado pela API fica TRAVADO como privado,
+sem recurso (https://support.google.com/youtube/answer/7300965). Por isso vem desligado."""
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -12,18 +12,24 @@ def configurado() -> bool:
         [config.YT_CLIENT_ID, config.YT_CLIENT_SECRET, config.YT_REFRESH_TOKEN])
 
 
-def _proximo_horario() -> datetime | None:
-    if not config.YT_HORARIO:
+def proximo_horario(ocupados: set[str]) -> datetime | None:
+    """Próximo horário livre de publicação (YT_HORARIO), a pelo menos 1 hora de agora."""
+    if not config.YT_HORARIOS:
         return None
-    hora, _, minuto = config.YT_HORARIO.partition(":")
     agora = datetime.now(config.FUSO)
-    alvo = agora.replace(hour=int(hora), minute=int(minuto or 0), second=0, microsecond=0)
-    if alvo < agora + timedelta(hours=1):
-        alvo += timedelta(days=1)
-    return alvo
+    for dias in range(0, 60):
+        for texto in sorted(config.YT_HORARIOS):
+            hora, _, minuto = texto.partition(":")
+            if not hora.isdigit():
+                continue
+            alvo = (agora + timedelta(days=dias)).replace(hour=int(hora) % 24, minute=int(minuto or 0) % 60,
+                                                         second=0, microsecond=0)
+            if alvo >= agora + timedelta(hours=1) and alvo.isoformat(timespec="minutes") not in ocupados:
+                return alvo
+    return None
 
 
-def enviar(video: Path, capa: Path | None, roteiro: dict) -> dict:
+def enviar(video: Path, capa: Path | None, item: dict, ocupados: set[str]) -> dict:
     from google.oauth2.credentials import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
@@ -34,18 +40,18 @@ def enviar(video: Path, capa: Path | None, roteiro: dict) -> dict:
                        scopes=["https://www.googleapis.com/auth/youtube.upload"])
     yt = build("youtube", "v3", credentials=cred, cache_discovery=False)
 
-    descricao = roteiro.get("descricao", "")
+    descricao = item.get("descricao", "")
     if "#shorts" not in descricao.lower():
         descricao += "\n\n#Shorts"
     status = {"selfDeclaredMadeForKids": False, "containsSyntheticMedia": True}
-    quando = _proximo_horario()
+    quando = proximo_horario(ocupados)
     if quando:
         status.update(privacyStatus="private",
                       publishAt=quando.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
     else:
         status["privacyStatus"] = config.YT_PRIVACIDADE
     corpo = {
-        "snippet": {"title": roteiro["titulo"], "description": descricao, "tags": roteiro.get("tags", []),
+        "snippet": {"title": item["titulo"], "description": descricao, "tags": item.get("tags", []),
                     "categoryId": "22", "defaultLanguage": "pt-BR", "defaultAudioLanguage": "pt-BR"},
         "status": status,
     }
@@ -63,4 +69,4 @@ def enviar(video: Path, capa: Path | None, roteiro: dict) -> dict:
         except Exception as e:
             print(f"Capa não enviada (normal em canal não verificado): {e}")
     return {"id": video_id, "privacidade": status["privacyStatus"],
-            "quando": quando.strftime("%d/%m às %H:%M") if quando else None}
+            "agendado_para": quando.isoformat(timespec="minutes") if quando else None}

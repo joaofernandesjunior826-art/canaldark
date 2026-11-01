@@ -185,13 +185,14 @@ def preparar_musica(dur: float, pasta: Path) -> Path | None:
     return pronta
 
 
-# ---- Montagem final ---------------------------------------------------------
-def montar(cenas: list[dict], chamada: str, pasta: Path) -> Path:
-    """cenas: [{audio, palavras, video|None, dur}]. Devolve o caminho do Short pronto."""
+# ---- Montagem (estação 5) e acabamento do Short (estação 6) -----------------
+def montar_base(cenas: list[dict], pasta: Path) -> dict:
+    """Junta as cenas na ordem e a narração contínua.
+    cenas: [{audio, palavras, video|None, dur}]. Devolve {video_mudo, voz, total, palavras}."""
     clipes, todas_palavras, inicio = [], [], 0.0
     for i, cena in enumerate(cenas):
         clipe = pasta / f"clipe_{i:02d}.mp4"
-        clipe_da_cena(cena["video"], cena["dur"], clipe)
+        clipe_da_cena(Path(cena["video"]) if cena.get("video") else None, cena["dur"], clipe)
         clipes.append(clipe)
         todas_palavras += [{**p, "ini": p["ini"] + inicio, "fim": p["fim"] + inicio}
                            for p in cena["palavras"]]
@@ -215,10 +216,18 @@ def montar(cenas: list[dict], chamada: str, pasta: Path) -> Path:
     voz = pasta / "narracao.wav"
     normalizar(voz_bruta, voz, -15)
     voz_bruta.unlink(missing_ok=True)
+    for clipe in clipes:
+        clipe.unlink(missing_ok=True)
+    lista.unlink(missing_ok=True)
+    return {"video_mudo": str(video_mudo), "voz": str(voz), "total": total, "palavras": todas_palavras}
 
+
+def finalizar(base: dict, chamada: str, pasta: Path) -> Path:
+    """Acabamento do Short: legenda animada, frase de impacto, música e arquivo final 9:16."""
+    video_mudo, voz, total = Path(base["video_mudo"]), Path(base["voz"]), base["total"]
     musica = preparar_musica(total, pasta)
     ass = pasta / "legenda.ass"
-    legenda_ass(todas_palavras, chamada, ass)
+    legenda_ass(base["palavras"], chamada, ass)
 
     entradas = ["-i", video_mudo, "-i", voz]
     if musica:

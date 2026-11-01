@@ -39,8 +39,8 @@ TELEGRAM_CHAT_ID = _env("TELEGRAM_CHAT_ID")
 # Horas (de Brasília) em que sai um vídeo novo. "9" = um por dia; "9,18" = dois por dia.
 HORARIOS = sorted({int(h) for h in _env("HORARIOS", "9").replace(" ", "").split(",")
                    if h.isdigit() and int(h) < 24}) or [9]
-MAX_POR_EXECUCAO = 2       # vídeos por execução (o resto fica na fila para a próxima hora)
 MAX_FALHAS_POR_DIA = 3     # depois disso a fábrica para até o dia seguinte
+MANTER_PREVIAS = 40        # quantos vídeos recentes ficam guardados para o painel
 
 # ---- Roteiro ----------------------------------------------------------------
 # Modelos gratuitos tentados em ordem. "gemini-flash-latest" aponta sempre para o Flash mais novo.
@@ -65,7 +65,17 @@ YT_CLIENT_ID = _env("YT_CLIENT_ID")
 YT_CLIENT_SECRET = _env("YT_CLIENT_SECRET")
 YT_REFRESH_TOKEN = _env("YT_REFRESH_TOKEN")
 YT_PRIVACIDADE = _env("YT_PRIVACIDADE", "private")  # usado quando não há YT_HORARIO
-YT_HORARIO = _env("YT_HORARIO")  # ex.: "18:00" agenda a publicação para o próximo 18:00
+# Horários de publicação no YouTube, ex.: "18:00" ou "12:00,18:00". Cada vídeo aprovado
+# vai para o próximo horário livre.
+YT_HORARIOS = [h.strip() for h in _env("YT_HORARIO").split(",") if h.strip()]
+
+# ---- GitHub (preenchido automaticamente dentro do GitHub Actions) -----------
+GITHUB_TOKEN = _env("GITHUB_TOKEN")
+GITHUB_REPOSITORY = _env("GITHUB_REPOSITORY")
+RELEASE_PREVIAS = "previas"  # onde ficam os vídeos para o painel assistir e baixar
+
+# ---- Painel (site com a fábrica e a fila de aprovação) ----------------------
+PAINEL_URL = _env("PAINEL_URL")
 
 # ---- Link desta execução no GitHub (para baixar o vídeo se o Telegram recusar) ----
 LINK_EXECUCAO = (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
