@@ -244,14 +244,20 @@ def _fonte_negrito() -> str:
 
 
 def capa(video: Path, texto: str, destino: Path) -> Path:
-    """Capa 1080x1920: um quadro do vídeo com a frase de impacto (usada no envio automático)."""
-    arq_texto = destino.with_suffix(".txt")
+    """Capa 1080x1920: um quadro do vídeo com a frase de impacto (usada no envio automático).
+    Cada linha é desenhada separada: versões novas do ffmpeg mostram a quebra de linha como um quadrado."""
     palavras = texto.upper().split() or ["HISTÓRIAS", "DA", "BÍBLIA"]
     meio = (len(palavras) + 1) // 2
-    arq_texto.write_text(" ".join(palavras[:meio]) + "\n" + " ".join(palavras[meio:]), encoding="utf-8")
-    ff("-ss", "1.5", "-i", video, "-frames:v", "1", "-vf",
-       f"eq=brightness=-0.15,drawtext=fontfile={_fonte_negrito()}:textfile={arq_texto}:expansion=none:"
-       f"text_align=C:fontsize=120:fontcolor=0xFFD700:borderw=8:bordercolor=black:line_spacing=20:"
-       f"x=(w-text_w)/2:y=(h-text_h)/2", "-q:v", "2", destino)
-    arq_texto.unlink(missing_ok=True)
+    linhas = [t for t in (" ".join(palavras[:meio]), " ".join(palavras[meio:])) if t]
+    altura, filtros, arquivos = 150, ["eq=brightness=-0.15"], []
+    for i, linha in enumerate(linhas):
+        arq = destino.with_name(f"capa_linha{i}.txt")
+        arq.write_text(linha, encoding="utf-8")
+        arquivos.append(arq)
+        filtros.append(f"drawtext=fontfile={_fonte_negrito()}:textfile={arq}:expansion=none:fontsize=120:"
+                       f"fontcolor=0xFFD700:borderw=8:bordercolor=black:x=(w-text_w)/2:"
+                       f"y=(h-{altura * len(linhas)})/2+{altura * i}")
+    ff("-ss", "1.5", "-i", video, "-frames:v", "1", "-vf", ",".join(filtros), "-q:v", "2", destino)
+    for arq in arquivos:
+        arq.unlink(missing_ok=True)
     return destino
