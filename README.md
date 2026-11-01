@@ -59,15 +59,15 @@ O Pexels pausou a emissão de novas chaves; use o Pixabay:
 2. Abra https://pixabay.com/api/docs/ já logado: a sua chave aparece em verde na parte
    **Parameters › key** ("Your API key"). Copie.
 
-### 3. Cadastrar no GitHub
-No repositório: **Settings › Secrets and variables › Actions › New repository secret**:
+### 3. Guardar as chaves (pelo painel)
+No painel: **Configurações › Chaves da fábrica**. Cole cada chave no campo dela e toque em **Salvar**.
+Elas ficam no **cofre do painel**: criptografadas (AES-256) com um segredo que só existe na Vercel.
+Só a sua fábrica, rodando no GitHub Actions deste repositório, consegue abrir o cofre (ela prova
+quem é com um token OIDC assinado pelo GitHub).
 
-| Nome | Valor |
-|---|---|
-| `GEMINI_API_KEY` | chave do passo 1 |
-| `PIXABAY_API_KEY` | chave do passo 2 (opcional) |
-| `PEXELS_API_KEY` | (opcional, se você já tiver uma chave do Pexels) |
-| `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID` | (opcional, avisos no celular; veja abaixo) |
+Quem preferir pode cadastrar nos **Secrets do GitHub** (Settings › Secrets and variables › Actions)
+com os nomes `GEMINI_API_KEY`, `PIXABAY_API_KEY`, `PEXELS_API_KEY`, `TELEGRAM_BOT_TOKEN` e
+`TELEGRAM_CHAT_ID`. Um Secret com o mesmo nome tem prioridade sobre o cofre.
 
 ### 4. Conectar o painel
 Abra https://clover-fabrica.vercel.app e siga a tela **Conectar a fábrica**: ela abre o GitHub para

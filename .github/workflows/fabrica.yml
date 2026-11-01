@@ -31,6 +31,7 @@ on:
 
 permissions:
   contents: write  # guardar o histórico em dados/ e as prévias dos vídeos
+  id-token: write  # provar ao painel que é a sua fábrica, para abrir o cofre de chaves
 
 concurrency:
   group: fabrica
@@ -79,6 +80,9 @@ jobs:
         run: |
           pip install -q -r requirements.txt
           if [ "$YT_ENVIO_AUTOMATICO" = "sim" ]; then pip install -q -r requirements-youtube.txt; fi
+
+      - name: Chaves
+        run: python -m fabrica chaves
 
       - name: Pedidos
         id: plano

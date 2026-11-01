@@ -1,5 +1,6 @@
 """Fábrica de Shorts. Comandos:
 
+  python -m fabrica chaves          abre as chaves guardadas no cofre do painel (no GitHub Actions)
   python -m fabrica planejar        lê os pedidos (painel, Telegram, GitHub) e vê se está na hora do vídeo
   python -m fabrica etapa <nome>    roda uma estação: pauta, roteiro, narracao, cenas, montagem,
                                     shorts, thumbnail, agenda
@@ -14,7 +15,7 @@ import os
 import shutil
 import sys
 
-from . import acoes, config, estado, etapas, pedidos, telegram, youtube
+from . import acoes, chaves, config, estado, etapas, pedidos, telegram, youtube
 
 
 def _config_atual() -> dict:
@@ -88,7 +89,7 @@ def teste(tema: str, arquivo_roteiro: str | None) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Fábrica de Shorts")
-    p.add_argument("acao", choices=["planejar", "etapa", "falha", "teste"])
+    p.add_argument("acao", choices=["chaves", "planejar", "etapa", "falha", "teste"])
     p.add_argument("nome", nargs="?", help="etapa: nome da estação")
     p.add_argument("--tema", default="", help="teste: tema ou história")
     p.add_argument("--roteiro", help="teste: arquivo JSON com um roteiro pronto")
@@ -96,7 +97,9 @@ def main() -> None:
     precisa_ffmpeg = args.acao == "teste" or (args.acao == "etapa" and args.nome != "agenda")
     if precisa_ffmpeg and not shutil.which("ffmpeg"):
         sys.exit("O ffmpeg não está instalado.")
-    if args.acao == "planejar":
+    if args.acao == "chaves":
+        chaves.carregar()
+    elif args.acao == "planejar":
         planejar()
     elif args.acao == "etapa":
         etapas.executar_etapa(args.nome)

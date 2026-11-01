@@ -26,14 +26,19 @@ def _numero(nome: str, padrao: float) -> float:
         return padrao
 
 
+def _chave(nome: str) -> str:
+    """Secret do GitHub com esse nome ou, se não houver, a chave guardada no cofre do painel."""
+    return _env(nome) or _env(f"PAINEL_{nome}")
+
+
 # ---- Chaves gratuitas -------------------------------------------------------
-GEMINI_API_KEY = _env("GEMINI_API_KEY")
-PEXELS_API_KEY = _env("PEXELS_API_KEY")
-PIXABAY_API_KEY = _env("PIXABAY_API_KEY")
+GEMINI_API_KEY = _chave("GEMINI_API_KEY")
+PEXELS_API_KEY = _chave("PEXELS_API_KEY")
+PIXABAY_API_KEY = _chave("PIXABAY_API_KEY")
 
 # ---- Telegram: onde os vídeos chegam para você aprovar ----------------------
-TELEGRAM_BOT_TOKEN = _env("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = _env("TELEGRAM_CHAT_ID")
+TELEGRAM_BOT_TOKEN = _chave("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = _chave("TELEGRAM_CHAT_ID")
 
 # ---- Agenda -----------------------------------------------------------------
 # Horas (de Brasília) em que sai um vídeo novo. "9" = um por dia; "9,18" = dois por dia.

@@ -380,3 +380,12 @@ a.lista-item:hover b { color: var(--lavanda); }
   .capa { width: 96px; }
   .kpi b { font-size: 22px; }
 }
+
+/* Cofre de chaves (Configurações) */
+.chaves { display: flex; flex-direction: column; gap: 14px; }
+.chave-linha { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--linha); }
+.chave-linha:first-child { border-top: 0; padding-top: 0; }
+.chave-topo { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+.chave-topo .sinal { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.chave-topo small { display: block; color: var(--texto-3); font-size: 12.5px; }
+.chave-topo a { color: var(--lavanda); }

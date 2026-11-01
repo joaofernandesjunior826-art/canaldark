@@ -413,6 +413,32 @@ function pgHistorias() {
      <p class="sub">Para mudar a lista, edite o arquivo <span class="mono">dados/historias.txt</span> no GitHub.</p>`;
 }
 
+const CHAVES = [
+  { nome: "GEMINI_API_KEY", titulo: "Gemini (roteiro)", obrigatoria: true, cfg: "gemini",
+    ajuda: "Obrigatória. Crie em aistudio.google.com/apikey", link: "https://aistudio.google.com/apikey" },
+  { nome: "PIXABAY_API_KEY", titulo: "Pixabay (paisagens)", cfg: "pixabay",
+    ajuda: "Opcional. Sem ela os vídeos usam só pinturas.", link: "https://pixabay.com/api/docs/" },
+  { nome: "PEXELS_API_KEY", titulo: "Pexels (paisagens)", cfg: "pexels",
+    ajuda: "Opcional. O Pexels pausou chaves novas; use se já tiver uma." },
+  { nome: "TELEGRAM_BOT_TOKEN", titulo: "Telegram: token do bot", cfg: "telegram",
+    ajuda: "Opcional. Para receber os vídeos no celular." },
+  { nome: "TELEGRAM_CHAT_ID", titulo: "Telegram: número do chat", cfg: "telegram",
+    ajuda: "Opcional. Vem junto com o token do bot." },
+];
+
+function campoChave(c, cfg, cofre) {
+  const noCofre = !!cofre[c.nome];
+  const naFabrica = !!cfg[c.cfg];
+  const ok = noCofre || naFabrica;
+  const situacao = ok ? (noCofre ? "Guardada no cofre" : "Cadastrada no GitHub") : c.ajuda;
+  return `<form class="chave-linha" data-form="chave" data-nome="${c.nome}">
+    <div class="chave-topo"><span class="sinal ${ok ? "ok" : c.obrigatoria ? "falta" : "opcional"}">${ok ? "✓" : c.obrigatoria ? "!" : "–"}</span>
+      <span><b>${esc(c.titulo)}</b><small>${esc(situacao)}${!ok && c.link ? ` · <a href="${c.link}" target="_blank" rel="noopener">abrir</a>` : ""}</small></span></div>
+    <div class="linha-form"><input class="campo mono" name="valor" type="password" autocomplete="off" placeholder="${ok ? "Colar uma nova para trocar" : "Cole a chave aqui"}">
+      <button class="botao principal pequeno" type="submit">Salvar</button></div>
+  </form>`;
+}
+
 function pgConfig() {
   const d = app.dados;
   const cfg = d.estado.config || {};
@@ -423,13 +449,9 @@ function pgConfig() {
   const variaveis = `https://github.com/${d.repo}/settings/variables/actions`;
   return topo("configurações", "O que já está pronto e o que falta") + `
     <div class="cartao vidro"><h2>Chaves da fábrica</h2>
-      ${conhecida ? `<ul class="checklist">
-        ${item(cfg.gemini, "Gemini (roteiro)", cfg.gemini ? "Cadastrada." : "Falta o segredo GEMINI_API_KEY. Sem ele a fábrica só faz vídeos de teste.")}
-        ${item(cfg.pexels || cfg.pixabay, "Paisagens (Pixabay ou Pexels)", cfg.pexels || cfg.pixabay ? "Cadastrada." : "Opcional: segredo PIXABAY_API_KEY. Sem ele, os vídeos usam só pinturas clássicas da história.", true)}
-        ${item(cfg.telegram, "Telegram (avisos no celular)", cfg.telegram ? "Ligado." : "Opcional: segredos TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID.", true)}
-        ${item(cfg.youtube_auto, "YouTube automático", cfg.youtube_auto ? "Ligado: aprovou, programou." : "Opcional e só depois da auditoria da Google. Até lá, você posta pelo app (1 minuto).", true)}
-      </ul>` : '<p class="sub">A fábrica ainda não rodou com o painel. Isso aparece depois da próxima execução.</p>'}
-      <div class="linha-acoes" style="margin-top:14px"><a class="botao pequeno" href="${segredos}" target="_blank" rel="noopener">${icone("externo")}Cadastrar chaves (Secrets)</a></div>
+      <p class="sub" style="margin:0 0 14px">Cole a chave e toque em <b>Salvar</b>. Ela fica guardada com criptografia e só a sua fábrica consegue abrir.</p>
+      <div class="chaves">${CHAVES.map((c) => campoChave(c, cfg, d.cofre || {})).join("")}</div>
+      ${conhecida ? "" : '<p class="sub" style="margin-top:12px">A fábrica confirma as chaves na próxima vez que rodar.</p>'}
     </div>
     <div class="cartao vidro"><h2>Agenda e vídeo</h2>
       <ul class="checklist">
@@ -538,6 +560,15 @@ document.addEventListener("submit", (ev) => {
   ev.preventDefault();
   const botao = $("button[type=submit]", form);
   if (form.dataset.form === "produzir") pedir("produzir", { tema: form.tema.value.trim() }, botao);
+  if (form.dataset.form === "chave") {
+    const valor = form.valor.value.trim();
+    if (!valor) return avisar("Cole a chave antes de salvar.", true);
+    botao.disabled = true;
+    api("/api/chaves", { method: "POST", body: { nome: form.dataset.nome, valor } })
+      .then(() => { form.valor.value = ""; avisar("Chave guardada com segurança! A fábrica usa a partir da próxima execução."); carregar(); })
+      .catch((erro) => { avisar(erro.message, true); botao.disabled = false; });
+    return;
+  }
   if (form.dataset.form === "refazer") {
     app.abertos.delete(form.dataset.id);
     pedir("refazer", { id: form.dataset.id, ajuste: form.ajuste.value.trim() }, botao);
