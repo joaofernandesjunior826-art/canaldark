@@ -5,7 +5,7 @@ const ESTACOES = [
   ["1 Pauta", "Pauta", "escolhe a história"],
   ["2 Roteiro", "Roteiro", "texto com o Gemini"],
   ["3 Narração", "Narração", "voz em português"],
-  ["4 Cenas", "Cenas", "vídeos do Pexels"],
+  ["4 Cenas", "Cenas", "pinturas e paisagens"],
   ["5 Montagem", "Montagem", "junta cenas e voz"],
   ["6 Shorts", "Shorts", "legenda, música e 9:16"],
   ["7 Thumbnail", "Thumbnail", "capa do vídeo"],
@@ -425,7 +425,7 @@ function pgConfig() {
     <div class="cartao vidro"><h2>Chaves da fábrica</h2>
       ${conhecida ? `<ul class="checklist">
         ${item(cfg.gemini, "Gemini (roteiro)", cfg.gemini ? "Cadastrada." : "Falta o segredo GEMINI_API_KEY. Sem ele a fábrica só faz vídeos de teste.")}
-        ${item(cfg.pexels, "Pexels (cenas)", cfg.pexels ? "Cadastrada." : "Falta o segredo PEXELS_API_KEY. Sem ele as cenas viram fundo animado.")}
+        ${item(cfg.pexels, "Pexels (paisagens)", cfg.pexels ? "Cadastrada." : "Falta o segredo PEXELS_API_KEY. Sem ele as cenas usam só pinturas clássicas.")}
         ${item(cfg.telegram, "Telegram (avisos no celular)", cfg.telegram ? "Ligado." : "Opcional: segredos TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID.", true)}
         ${item(cfg.youtube_auto, "YouTube automático", cfg.youtube_auto ? "Ligado: aprovou, programou." : "Opcional e só depois da auditoria da Google. Até lá, você posta pelo app (1 minuto).", true)}
       </ul>` : '<p class="sub">A fábrica ainda não rodou com o painel. Isso aparece depois da próxima execução.</p>'}

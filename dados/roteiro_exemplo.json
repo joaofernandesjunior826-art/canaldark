@@ -3,14 +3,50 @@
   "referencia": "1 Samuel 17",
   "titulo": "Ele tinha só uma funda… e o gigante caiu",
   "descricao": "Um jovem pastor enfrenta o gigante que aterrorizava Israel. A história de Davi e Golias, em Primeiro Samuel 17. #Shorts #Bíblia #DaviEGolias #Fé",
-  "tags": ["bíblia", "davi e golias", "histórias da bíblia", "fé"],
+  "tags": [
+    "bíblia",
+    "davi e golias",
+    "histórias da bíblia",
+    "fé"
+  ],
   "capa": "UMA PEDRA BASTOU",
   "cenas": [
-    {"texto": "Por quarenta dias, um gigante zombou do exército de Deus.", "busca": "valley mist"},
-    {"texto": "Seu nome era Golias. Quase três metros de altura, armadura de bronze.", "busca": "ancient armor"},
-    {"texto": "Os soldados de Israel tremiam. Ninguém tinha coragem de lutar.", "busca": "army silhouettes"},
-    {"texto": "Até que um jovem pastor chegou levando pão para os irmãos.", "busca": "shepherd field"},
-    {"texto": "Davi ouviu o desafio e perguntou: quem é esse que afronta o Deus vivo?", "busca": "dramatic sky"},
-    {"texto": "Recusou a armadura do rei. Pegou apenas cinco pedras lisas do riacho.", "busca": "river stones"}
-  ]
+    {
+      "texto": "Por quarenta dias, um gigante zombou do exército de Deus.",
+      "busca": "valley mist",
+      "visual": "pintura",
+      "arte": "Goliath Philistine giant painting"
+    },
+    {
+      "texto": "Seu nome era Golias. Quase três metros de altura, armadura de bronze.",
+      "busca": "ancient armor",
+      "visual": "pintura",
+      "arte": "Goliath armor giant painting"
+    },
+    {
+      "texto": "Os soldados de Israel tremiam. Ninguém tinha coragem de lutar.",
+      "busca": "army silhouettes",
+      "visual": "paisagem",
+      "arte": ""
+    },
+    {
+      "texto": "Até que um jovem pastor chegou levando pão para os irmãos.",
+      "busca": "shepherd field",
+      "visual": "pintura",
+      "arte": "young David shepherd painting"
+    },
+    {
+      "texto": "Davi ouviu o desafio e perguntou: quem é esse que afronta o Deus vivo?",
+      "busca": "dramatic sky",
+      "visual": "pintura",
+      "arte": "David Goliath painting"
+    },
+    {
+      "texto": "Recusou a armadura do rei. Pegou apenas cinco pedras lisas do riacho.",
+      "busca": "river stones",
+      "visual": "pintura",
+      "arte": "David sling stones painting"
+    }
+  ],
+  "arte_geral": "David and Goliath"
 }

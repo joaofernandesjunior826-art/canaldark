@@ -13,7 +13,7 @@ Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 | 1 | Pauta | Escolhe a próxima história de `dados/historias.txt` (90 histórias, sem repetir) |
 | 2 | Roteiro | Gemini escreve o texto, o título, a descrição e as hashtags |
 | 3 | Narração | Voz neural em português (edge-tts) |
-| 4 | Cenas | Vídeos verticais do Pexels (Pixabay como reserva) |
+| 4 | Cenas | Pinturas clássicas da própria história (Wikimedia, domínio público) com movimento lento, misturadas com vídeos de paisagem do Pexels |
 | 5 | Montagem | Junta as cenas e a narração (ffmpeg) |
 | 6 | Shorts | Legenda animada, frase de impacto, música ambiente, 9:16 |
 | 7 | Thumbnail | Capa do vídeo |
@@ -52,7 +52,7 @@ humana que o YouTube exige para monetizar. Se a auditoria for aprovada, ligue o 
 ### 1. Chave do Gemini (roteiro)
 Em https://aistudio.google.com/apikey, entre com sua conta Google e toque em **Create API key**.
 
-### 2. Chave do Pexels (cenas)
+### 2. Chave do Pexels (paisagens)
 Crie uma conta em https://www.pexels.com/api/ e peça a chave (sai na hora).
 Opcional: https://pixabay.com/api/docs/ (reserva).
 

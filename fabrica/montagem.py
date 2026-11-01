@@ -50,6 +50,38 @@ def clipe_da_cena(origem: Path | None, dur: float, destino: Path) -> None:
        "-preset", "veryfast", "-crf", "20", "-r", FPS, destino)
 
 
+def _tamanho(imagem: Path) -> tuple[int, int]:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                        "stream=width,height", "-of", "csv=p=0", str(imagem)], capture_output=True, text=True)
+    try:
+        largura, altura = (int(x) for x in r.stdout.strip().split(",")[:2])
+        return largura, altura
+    except ValueError:
+        return 0, 0
+
+
+def clipe_de_pintura(imagem: Path, dur: float, destino: Path) -> None:
+    """A pintura ganha vida (efeito Ken Burns): zoom lento nas verticais e deslize nas horizontais."""
+    quadros = max(int(round(dur * FPS)), 1)
+    largura, altura = _tamanho(imagem)
+    acabamento = "eq=brightness=-0.05:saturation=1.05,vignette=PI/5,setsar=1,format=yuv420p"
+    if largura and largura / max(altura, 1) > 0.9:
+        # Horizontal: mostra a pintura deslizando de um lado para o outro (sem cortar demais).
+        ida = random.choice([True, False])
+        x = f"(iw-ow)*t/{dur:.3f}" if ida else f"(iw-ow)*(1-t/{dur:.3f})"
+        filtro = f"scale=-2:{int(H * 1.04)},crop={W}:{H}:x='{x}':y='(ih-oh)/2',{acabamento}"
+        entrada = ["-loop", "1", "-framerate", FPS, "-i", imagem]
+    else:
+        # Vertical: aproxima ou afasta devagar. Trabalhar no dobro do tamanho deixa o movimento suave.
+        z = random.choice([f"1+0.14*on/{quadros}", f"1.14-0.14*on/{quadros}"])
+        filtro = (f"scale={W * 2}:{H * 2}:force_original_aspect_ratio=increase,crop={W * 2}:{H * 2},"
+                  f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={quadros}:s={W}x{H}:fps={FPS},"
+                  f"{acabamento}")
+        entrada = ["-i", imagem]
+    ff(*entrada, "-vf", filtro, "-frames:v", quadros, "-an", "-c:v", "libx264",
+       "-preset", "veryfast", "-crf", "20", "-r", FPS, destino)
+
+
 # ---- Legenda ----------------------------------------------------------------
 def _limpar_ass(texto: str) -> str:
     return texto.replace("{", "(").replace("}", ")").replace("\\", "/").replace("\n", " ")
@@ -192,7 +224,10 @@ def montar_base(cenas: list[dict], pasta: Path) -> dict:
     clipes, todas_palavras, inicio = [], [], 0.0
     for i, cena in enumerate(cenas):
         clipe = pasta / f"clipe_{i:02d}.mp4"
-        clipe_da_cena(Path(cena["video"]) if cena.get("video") else None, cena["dur"], clipe)
+        if cena.get("imagem"):
+            clipe_de_pintura(Path(cena["imagem"]), cena["dur"], clipe)
+        else:
+            clipe_da_cena(Path(cena["video"]) if cena.get("video") else None, cena["dur"], clipe)
         clipes.append(clipe)
         todas_palavras += [{**p, "ini": p["ini"] + inicio, "fim": p["fim"] + inicio}
                            for p in cena["palavras"]]

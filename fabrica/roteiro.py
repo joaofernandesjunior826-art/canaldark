@@ -26,9 +26,14 @@ Regras:
   (ex.: "Primeiro Samuel, capítulo dezessete"; "trezentos homens").
 - Termine com uma lição curta e uma chamada simples para seguir o canal.
 - Divida a narração em {cenas} cenas, cada uma com 1 ou 2 frases.
-- Para cada cena, "busca": 2 a 4 palavras EM INGLÊS para buscar um vídeo de banco de imagens que
-  combine com o clima da cena (paisagens, céu, deserto, mar, fogo, cidade antiga, luz, mãos,
-  silhuetas, multidão de costas). Evite rostos, pessoas específicas e qualquer coisa moderna.
+- Para cada cena, escolha o fundo em "visual":
+  - "pintura" quando a cena mostra personagens ou um momento da história. Em "arte", escreva de 2 a 5
+    palavras EM INGLÊS para achar uma pintura clássica desse momento (ex.: "David slingshot Goliath
+    painting", "Moses parting Red Sea painting", "Noah ark animals painting"). Nada violento demais.
+  - "paisagem" para cenas de clima, natureza ou reflexão. Em "busca", escreva de 2 a 4 palavras EM
+    INGLÊS para um vídeo de banco de imagens (céu, deserto, mar, fogo, cidade antiga, luz, silhuetas).
+  Use "pintura" em pelo menos metade das cenas e preencha sempre "arte" e "busca" (servem de reserva).
+- "arte_geral": de 2 a 4 palavras EM INGLÊS com o nome da história, para buscar pinturas (ex.: "David and Goliath").
 - "titulo": até 70 caracteres, chamativo e verdadeiro, sem caixa alta exagerada e sem hashtags.
 - "descricao": 2 ou 3 frases resumindo a história, com a referência bíblica e de 3 a 5 hashtags
   no final (inclua #Shorts e #Bíblia).
@@ -37,8 +42,8 @@ Regras:
 - "referencia": a passagem bíblica, no formato "1 Samuel 17".
 {extra}
 Responda APENAS com JSON neste formato:
-{{"titulo": "...", "descricao": "...", "tags": ["..."], "capa": "...", "referencia": "...",
-  "cenas": [{{"texto": "...", "busca": "..."}}]}}"""
+{{"titulo": "...", "descricao": "...", "tags": ["..."], "capa": "...", "referencia": "...", "arte_geral": "...",
+  "cenas": [{{"texto": "...", "visual": "pintura", "arte": "...", "busca": "..."}}]}}"""
 
 SEGURANCA = [{"category": c, "threshold": "BLOCK_ONLY_HIGH"} for c in (
     "HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
@@ -144,7 +149,9 @@ def gerar_roteiro(titulo: str, referencia: str, ajuste: str = "", recentes: list
     for c in roteiro.get("cenas") or []:
         if isinstance(c, dict) and str(c.get("texto", "")).strip():
             cenas_ok.append({"texto": str(c["texto"]).strip(),
-                             "busca": str(c.get("busca") or "dramatic sky clouds").strip()})
+                             "visual": "paisagem" if str(c.get("visual", "")).lower().startswith("pais") else "pintura",
+                             "arte": str(c.get("arte") or "").strip()[:80],
+                             "busca": str(c.get("busca") or "dramatic sky clouds").strip()[:80]})
     if not cenas_ok:
         raise RuntimeError("O Gemini devolveu um roteiro sem cenas.")
     total = sum(len(c["texto"].split()) for c in cenas_ok)
@@ -159,5 +166,6 @@ def gerar_roteiro(titulo: str, referencia: str, ajuste: str = "", recentes: list
         "descricao": str(roteiro.get("descricao") or "").replace("<", "").replace(">", "").strip(),
         "tags": tags[:15],
         "capa": str(roteiro.get("capa") or "").strip()[:40],
+        "arte_geral": str(roteiro.get("arte_geral") or "").strip()[:60],
         "cenas": cenas_ok,
     }

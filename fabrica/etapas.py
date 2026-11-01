@@ -1,10 +1,11 @@
 """As 8 estações da fábrica. Cada uma roda como um passo separado no GitHub Actions, para o painel
 mostrar ao vivo em qual estação o vídeo está. O andamento fica salvo em saida/trabalho.json."""
 import json
+import random
 import shutil
 from pathlib import Path
 
-from . import cenas, config, estado, github, montagem, narracao, roteiro, telegram, youtube
+from . import arte, cenas, config, estado, github, montagem, narracao, roteiro, telegram, youtube
 
 ETAPAS = [("pauta", "1 Pauta"), ("roteiro", "2 Roteiro"), ("narracao", "3 Narração"),
           ("cenas", "4 Cenas"), ("montagem", "5 Montagem"), ("shorts", "6 Shorts"),
@@ -76,12 +77,34 @@ def _narracao(t: dict) -> None:
 
 
 def _cenas(t: dict) -> None:
+    """Fundo de cada cena: pintura clássica da história (Wikimedia, grátis) ou vídeo de paisagem
+    (Pexels/Pixabay). Se um faltar, tenta o outro; o fundo escuro animado é só o último recurso."""
     e = estado.ler_estado()
     evitar = set(e["clipes_usados"])
-    for i, (cena, parte) in enumerate(zip(t["roteiro"]["cenas"], t["partes"])):
-        arquivo = Path(t["pasta"], f"cena_{i:02d}.mp4")
-        if cenas.baixar_cena(cena["busca"], arquivo, evitar, parte["dur"]):
-            parte["video"] = str(arquivo)
+    galeria = arte.Galeria(evitar)
+    texto = t["roteiro"]
+    geral = texto.get("arte_geral", "")
+    reserva = [f"{geral} painting" if geral else "", geral, t["historia"]]
+    tem_banco = bool(config.PEXELS_API_KEY or config.PIXABAY_API_KEY)
+    for i, (cena, parte) in enumerate(zip(texto["cenas"], t["partes"])):
+        imagem = Path(t["pasta"], f"pintura_{i:02d}.jpg")
+        video = Path(t["pasta"], f"cena_{i:02d}.mp4")
+        quer_pintura = cena.get("visual", "pintura") != "paisagem" or not tem_banco
+        if quer_pintura and galeria.baixar([cena.get("arte"), *reserva], imagem):
+            parte["imagem"] = str(imagem)
+        elif tem_banco and cenas.baixar_cena(cena["busca"], video, evitar, parte["dur"]):
+            parte["video"] = str(video)
+        elif not quer_pintura and galeria.baixar([cena.get("arte"), *reserva], imagem):
+            parte["imagem"] = str(imagem)
+    # Cena que ficou sem fundo repete uma pintura desta história (com outro movimento).
+    pinturas = [p["imagem"] for p in t["partes"] if p.get("imagem")]
+    for parte in t["partes"]:
+        if not parte.get("imagem") and not parte.get("video") and pinturas:
+            parte["imagem"] = random.choice(pinturas)
+    n_pinturas = sum(1 for p in t["partes"] if p.get("imagem"))
+    n_videos = sum(1 for p in t["partes"] if p.get("video"))
+    print(f"Fundos: {n_pinturas} pintura(s), {n_videos} vídeo(s), "
+          f"{len(t['partes']) - n_pinturas - n_videos} fundo(s) animado(s)")
     if t.get("salvar_estado", True):  # o teste local não mexe nos dados do repositório
         e["clipes_usados"] = list(dict.fromkeys(e["clipes_usados"] + sorted(evitar)))
         estado.salvar_estado(e)
@@ -199,7 +222,7 @@ def produzir_tudo(tarefa: dict, enviar: bool = True, roteiro_pronto: dict | None
 
 def _limpar(t: dict) -> None:
     pasta = Path(t["pasta"])
-    for arq in [*pasta.glob("cena_*.mp4"), *pasta.glob("voz_*.mp3"), pasta / "video_mudo.mp4",
+    for arq in [*pasta.glob("cena_*.mp4"), *pasta.glob("pintura_*.jpg"), *pasta.glob("voz_*.mp3"), pasta / "video_mudo.mp4",
                 pasta / "narracao.wav", pasta / "musica.wav"]:
         arq.unlink(missing_ok=True)
 
