@@ -114,6 +114,8 @@ Tudo dentro dos planos gratuitos:
 
 ## Se algo der errado
 O bot avisa no Telegram com o motivo e tenta de novo na hora seguinte (até 3 vezes por dia).
+Para conferir se a montagem está funcionando, mesmo sem chaves: **Actions › Fábrica de Shorts ›
+Run workflow**, marque **teste** e rode. Sai um vídeo de exemplo em *Artifacts* (nada é enviado).
 Os detalhes ficam em **Actions** (cada execução tem o registro completo), e os vídeos ficam 7 dias
 em *Artifacts* de cada execução.
 
