@@ -323,12 +323,12 @@
     "postar_em": "2026-11-02T06:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T09:33:42-03:00"
+    "aprovado_em": "2026-11-02T09:38:23-03:00"
   },
   {
     "id": "20261102-031607",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Sodoma e Gomorra e a mulher de Ló",
     "referencia": "Gênesis 19",
     "titulo": "Por que olhar para trás foi fatal para a mulher de Ló?",
@@ -345,7 +345,8 @@
     "duracao_seg": 60,
     "postar_em": "2026-11-02T08:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T09:38:23-03:00"
   },
   {
     "id": "20261102-032158",
@@ -574,6 +575,30 @@
     "data": "2026-11-02T09:38:01-03:00",
     "duracao_seg": 69,
     "postar_em": "2026-11-02T20:30-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261102-093823",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "As dez pragas do Egito",
+    "referencia": "Êxodo 7-11",
+    "titulo": "As Dez Pragas que Abalaram o Império do Faraó",
+    "descricao": "Descubra como o Egito foi desolado pelas dez pragas após o Faraó se recusar a libertar o povo de Deus. Acompanhe esse momento marcante descrito em Êxodo capítulos sete ao onze. #Shorts #Bíblia #HistóriasDaBíblia #Moisés",
+    "tags": [
+      "Dez Pragas",
+      "Moisés",
+      "Faraó",
+      "Êxodo",
+      "Bíblia",
+      "Histórias da Bíblia",
+      "Egito",
+      "Milagres"
+    ],
+    "data": "2026-11-02T09:42:23-03:00",
+    "duracao_seg": 70,
+    "postar_em": "2026-11-02T21:15-03:00",
     "previa": true,
     "telegram": []
   }
