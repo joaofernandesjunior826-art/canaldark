@@ -1,8 +1,10 @@
 {
   "fila": [
     {
-      "tipo": "extra",
-      "tema": "A Torre de Babel"
+      "tipo": "instagram",
+      "tema": "Imobiliária",
+      "ajuste": "",
+      "pedido": "2026-11-02T01:05:47.000Z"
     }
   ],
   "falhas": {
@@ -51,7 +53,19 @@
     "commons:85099294",
     "pixabay:174773",
     "pixabay:2147",
-    "pixabay:285663"
+    "pixabay:285663",
+    "commons:10471408",
+    "commons:15863915",
+    "commons:22135881",
+    "commons:22179117",
+    "commons:22182540",
+    "commons:65139555",
+    "commons:74459710",
+    "commons:8340024",
+    "pixabay:197898",
+    "pixabay:237673",
+    "pixabay:344909",
+    "pixabay:355559"
   ],
   "config": {
     "gemini": true,

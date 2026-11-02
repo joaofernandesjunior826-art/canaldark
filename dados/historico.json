@@ -153,5 +153,27 @@
     "duracao_seg": 30,
     "previa": true,
     "telegram": []
+  },
+  {
+    "id": "20261101-220743",
+    "tipo": "extra",
+    "status": "aguardando",
+    "historia": "A Torre de Babel",
+    "referencia": "Gênesis 11",
+    "titulo": "O Dia em que Deus Parou a Maior Construção da Terra",
+    "descricao": "Descubra como a ambição humana gerou a divisão dos idiomas e espalhou os povos pela Terra, como relata Gênesis 11:1-9. Uma lição eterna sobre humildade diante do Criador. #Shorts #Bíblia #TorreDeBabel #HistóriasBíblicas",
+    "tags": [
+      "Torre de Babel",
+      "Gênesis 11",
+      "Histórias da Bíblia",
+      "Bíblia Sagrada",
+      "confusão das línguas",
+      "origem dos idiomas",
+      "Deus"
+    ],
+    "data": "2026-11-01T22:11:34-03:00",
+    "duracao_seg": 70,
+    "previa": true,
+    "telegram": []
   }
 ]
