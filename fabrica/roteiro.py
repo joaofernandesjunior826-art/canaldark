@@ -123,10 +123,10 @@ def _chamar_gemini(prompt: str) -> dict:
             if r.status_code == 429 and "limit: 0" not in r.text and tentativa == 0:
                 time.sleep(30)  # limite por minuto: espera um pouco e tenta de novo
                 continue
-            if r.status_code in (500, 502, 503, 504):
-                time.sleep(15 * (tentativa + 1))
+            if r.status_code in (500, 502, 503, 504) and tentativa == 0:
+                time.sleep(8)  # modelo sobrecarregado: tenta mais uma vez e depois passa para o próximo
                 continue
-            break  # sem cota, modelo inexistente ou chave errada: tenta o próximo modelo
+            break  # sem cota, sobrecarregado, modelo inexistente ou chave errada: tenta o próximo modelo
     raise RuntimeError(f"O Gemini não conseguiu escrever o roteiro. Último erro: {ultimo_erro}")
 
 
