@@ -673,5 +673,28 @@
     "postar_em": "2026-11-03T06:30-03:00",
     "previa": true,
     "telegram": []
+  },
+  {
+    "id": "20261102-204112",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Os Dez Mandamentos",
+    "referencia": "Êxodo 19-20",
+    "titulo": "O Dia em que o Monte Sinai Tremeu: Os Dez Mandamentos",
+    "descricao": "A impressionante história de quando Deus entregou os Dez Mandamentos no Monte Sinai em meio a trovões e fogo. Relembre as leis sagradas do livro de Êxodo e entenda o seu valor. #Shorts #Bíblia #Moisés #DezMandamentos",
+    "tags": [
+      "Dez Mandamentos",
+      "Moisés",
+      "Monte Sinai",
+      "Êxodo 20",
+      "Histórias da Bíblia",
+      "Bíblia Sagrada",
+      "Mandamentos de Deus"
+    ],
+    "data": "2026-11-02T20:45:05-03:00",
+    "duracao_seg": 63,
+    "postar_em": "2026-11-03T08:00-03:00",
+    "previa": true,
+    "telegram": []
   }
 ]
