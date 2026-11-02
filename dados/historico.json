@@ -251,7 +251,7 @@
   {
     "id": "20261101-225910",
     "tipo": "instagram",
-    "status": "aguardando",
+    "status": "publicado",
     "segmento": "Estética automotiva",
     "marca": "Obsidian Detail",
     "titulo": "Obsidian Detail · Estética automotiva",
@@ -260,6 +260,7 @@
     "data": "2026-11-01T23:02:40-03:00",
     "duracao_seg": 15,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "publicado_em": "2026-11-02T01:54:40-03:00"
   }
 ]
