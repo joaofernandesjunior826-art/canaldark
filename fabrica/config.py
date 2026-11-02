@@ -62,9 +62,10 @@ MAX_FALHAS_POR_DIA = 10    # depois disso a fábrica para até o dia seguinte
 MANTER_PREVIAS = 60        # quantos vídeos recentes ficam guardados para o painel
 
 # ---- Roteiro ----------------------------------------------------------------
-# Modelos gratuitos tentados em ordem. "gemini-flash-latest" aponta sempre para o Flash mais novo.
+# Modelos gratuitos tentados em ordem; cada um tem a sua cota grátis por dia. Quando a cota de um
+# acaba, a fábrica pula ele até o dia seguinte. "gemini-flash-latest" aponta para o Flash mais novo.
 GEMINI_MODELOS = [m.strip() for m in _env(
-    "GEMINI_MODELO", "gemini-3.8-flash,gemini-flash-latest,gemini-3.5-flash-lite"
+    "GEMINI_MODELO", "gemini-3.8-flash,gemini-3.6-flash,gemini-2.5-flash,gemini-3.5-flash-lite,gemini-flash-latest"
 ).split(",") if m.strip()]
 NOME_CANAL = _env("NOME_CANAL", "Histórias da Bíblia")
 DURACAO_ALVO = int(min(max(_numero("DURACAO_ALVO_SEG", 60), 20), 170))  # Shorts aceitam até 180 s

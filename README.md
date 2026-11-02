@@ -174,7 +174,7 @@ Em **Settings › Secrets and variables › Actions › Variables**:
 | `VELOCIDADE_VOZ` | `+8%` | Ritmo da narração. |
 | `VOLUME_MUSICA` | `0.15` | Volume da música; `0` tira a música. |
 | `NOME_CANAL` | `Histórias da Bíblia` | Usado no roteiro. |
-| `GEMINI_MODELO` | `gemini-3.8-flash,gemini-flash-latest,gemini-3.5-flash-lite` | Modelos tentados em ordem. |
+| `GEMINI_MODELO` | `gemini-3.8-flash,gemini-3.6-flash,gemini-2.5-flash,gemini-3.5-flash-lite,gemini-flash-latest` | Modelos tentados em ordem (cada um com cota grátis própria). |
 | `PAINEL_URL` | `https://clover-fabrica.vercel.app` | Link do painel nos avisos do Telegram. |
 
 - **Histórias:** edite `dados/historias.txt` (uma por linha: `título | referência`).

@@ -88,6 +88,29 @@ def proxima_historia() -> tuple[str, str]:
 
 
 # ---- Gemini -----------------------------------------------------------------
+def _resumo_erro(r) -> str:
+    """Só a mensagem do erro do Gemini (sem o texto inteiro da resposta)."""
+    try:
+        erro = r.json().get("error", {})
+        cotas = [v.get("quotaId", "") for d in erro.get("details", []) for v in d.get("violations", [])]
+        return f"{erro.get('status', '')}: {erro.get('message', '')[:160]}" + (f" [{', '.join(cotas)}]" if cotas else "")
+    except ValueError:
+        return r.text[:200]
+
+
+def _esgotados_hoje() -> dict:
+    e = estado.ler_estado()
+    marcados = e.get("gemini_esgotado", {})
+    return {m: d for m, d in marcados.items() if d == estado.hoje()}
+
+
+def _marcar_esgotado(modelo: str) -> None:
+    """O limite grátis do dia acabou para este modelo: pula ele até amanhã (economiza minutos)."""
+    e = estado.ler_estado()
+    e["gemini_esgotado"] = {**_esgotados_hoje(), modelo: estado.hoje()}
+    estado.salvar_estado(e)
+
+
 def _chamar_gemini(prompt: str) -> dict:
     if not config.GEMINI_API_KEY:
         raise RuntimeError("Falta cadastrar o segredo GEMINI_API_KEY no GitHub.")
@@ -96,16 +119,20 @@ def _chamar_gemini(prompt: str) -> dict:
         "generationConfig": {"responseMimeType": "application/json"},
         "safetySettings": SEGURANCA,
     }
+    esgotados = _esgotados_hoje()
+    modelos = [m for m in config.GEMINI_MODELOS if m not in esgotados] or config.GEMINI_MODELOS
+    if esgotados:
+        print(f"Modelos sem cota hoje (pulados): {', '.join(esgotados)}")
     ultimo_erro = "nenhum modelo configurado"
-    for modelo in config.GEMINI_MODELOS:
-        for tentativa in range(3):
+    for modelo in modelos:
+        for tentativa in range(2):
             try:
-                r = requests.post(URL.format(modelo=modelo), json=corpo, timeout=180,
+                r = requests.post(URL.format(modelo=modelo), json=corpo, timeout=(10, 100),
                                   headers={"x-goog-api-key": config.GEMINI_API_KEY})
             except requests.RequestException as e:
                 ultimo_erro = f"{modelo}: {e}"
-                time.sleep(10)
-                continue
+                print("Gemini não respondeu:", ultimo_erro[:200])
+                break  # demorou demais: vai para o próximo modelo
             if r.status_code == 200:
                 try:
                     candidato = r.json()["candidates"][0]
@@ -118,13 +145,17 @@ def _chamar_gemini(prompt: str) -> dict:
                     ultimo_erro = f"{modelo}: resposta inválida ({e})"
                     print(ultimo_erro)
                     continue  # pede de novo ao mesmo modelo
-            ultimo_erro = f"{modelo}: HTTP {r.status_code} {r.text[:300]}"
+            ultimo_erro = f"{modelo}: HTTP {r.status_code} {_resumo_erro(r)}"
             print("Gemini falhou:", ultimo_erro)
-            if r.status_code == 429 and "limit: 0" not in r.text and tentativa == 0:
-                time.sleep(30)  # limite por minuto: espera um pouco e tenta de novo
-                continue
+            if r.status_code == 429:
+                if "PerDay" in r.text or "per day" in r.text.lower() or "limit: 0" in r.text:
+                    _marcar_esgotado(modelo)
+                    break
+                if tentativa == 0:
+                    time.sleep(20)  # limite por minuto: espera um pouco e tenta de novo
+                    continue
             if r.status_code in (500, 502, 503, 504) and tentativa == 0:
-                time.sleep(8)  # modelo sobrecarregado: tenta mais uma vez e depois passa para o próximo
+                time.sleep(6)  # modelo sobrecarregado: tenta mais uma vez e depois passa para o próximo
                 continue
             break  # sem cota, sobrecarregado, modelo inexistente ou chave errada: tenta o próximo modelo
     raise RuntimeError(f"O Gemini não conseguiu escrever o roteiro. Último erro: {ultimo_erro}")
