@@ -157,7 +157,7 @@
   {
     "id": "20261101-220743",
     "tipo": "extra",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A Torre de Babel",
     "referencia": "Gênesis 11",
     "titulo": "O Dia em que Deus Parou a Maior Construção da Terra",
@@ -173,6 +173,21 @@
     ],
     "data": "2026-11-01T22:11:34-03:00",
     "duracao_seg": 70,
+    "previa": true,
+    "telegram": [],
+    "aprovado_em": "2026-11-01T22:15:57-03:00"
+  },
+  {
+    "id": "20261101-221557",
+    "tipo": "instagram",
+    "status": "aguardando",
+    "segmento": "Imobiliária",
+    "marca": "Átrio Imóveis",
+    "titulo": "Átrio Imóveis · Imobiliária",
+    "legenda": "Imóveis de alto padrão precisam de um site à altura do seu metro quadrado. 🏛️\n\nApresentamos o conceito da Átrio Imóveis: estética sombria, tipografia imponente e navegação refinada para o público private. Cada detalhe foi pensado para transmitir autoridade e valorizar patrimônios multimilionários.\n\nProjeto conceito autoral criado pela Clover para elevar o padrão digital imobiliário.\n\nQuer um site assim para a sua empresa? Chama no direct.\n\n#criacaodesites #webdesign #imobiliariadeluxo #altopadrao #designexclusivo #sitedeluxo #uidesign #mercadonoimobiliario #identidadevisual",
+    "modelo": "luxo",
+    "data": "2026-11-01T22:19:50-03:00",
+    "duracao_seg": 20,
     "previa": true,
     "telegram": []
   },
