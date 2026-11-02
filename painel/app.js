@@ -206,12 +206,27 @@ function haQuanto(iso) {
   if (s < 86400) return `há ${Math.round(s / 3600)} h`;
   return `há ${Math.round(s / 86400)} dia(s)`;
 }
-function proximoVideo(horarios) {
-  const agora = new Date(new Date().toLocaleString("en-US", fuso));
-  const hs = (horarios && horarios.length ? horarios : [9]).slice().sort((a, b) => a - b);
-  const prox = hs.find((h) => h > agora.getHours());
-  return prox !== undefined ? `hoje às ${prox}h` : `amanhã às ${hs[0]}h`;
+// Agenda de postagem: horários "HH:MM" (Brasília) vindos da fábrica
+const POSTAGEM_PADRAO = ["06:30", "08:00", "09:30", "11:00", "12:00", "13:00", "14:30", "16:00", "17:30", "18:30", "19:30", "20:30", "21:15", "22:00", "23:00"];
+function postagem() { const p = app.dados?.estado?.config?.postagem; return p && p.length ? p : POSTAGEM_PADRAO; }
+function agoraBrasilia() { return new Date(new Date().toLocaleString("en-US", fuso)); }
+function hojeBrasilia() { const a = agoraBrasilia(); return `${a.getFullYear()}-${String(a.getMonth() + 1).padStart(2, "0")}-${String(a.getDate()).padStart(2, "0")}`; }
+function proximaPostagem() {
+  const a = agoraBrasilia(), hhmm = `${String(a.getHours()).padStart(2, "0")}:${String(a.getMinutes()).padStart(2, "0")}`;
+  const prox = postagem().find((h) => h > hhmm);
+  return prox ? `hoje às ${prox}` : `amanhã às ${postagem()[0]}`;
 }
+// "hoje às 12:00", "amanhã às 06:30", "02/11 às 09:30"; atrasado quando já passou
+function quandoPostar(iso) {
+  if (!iso) return null;
+  const dia = iso.slice(0, 10), hora = iso.slice(11, 16);
+  const amanha = new Date(agoraBrasilia().getTime() + 86400000);
+  const diaAmanha = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, "0")}-${String(amanha.getDate()).padStart(2, "0")}`;
+  const passou = new Date(iso) < new Date();
+  const rotulo = dia === hojeBrasilia() ? `hoje às ${hora}` : dia === diaAmanha ? `amanhã às ${hora}` : `${dia.slice(8, 10)}/${dia.slice(5, 7)} às ${hora}`;
+  return { rotulo, passou, hora };
+}
+const porHorario = (a, b) => (a.postar_em || "9999").localeCompare(b.postar_em || "9999");
 function logo() { return document.documentElement.dataset.tema === "claro" ? "marca-clara.png" : "marca.png"; }
 const ehReels = (v) => v.tipo === "instagram";
 function videosCom(...status) { return (app.dados?.videos || []).filter((v) => !ehReels(v) && status.includes(v.status)); }
@@ -306,7 +321,7 @@ function pgFabrica() {
   let sub;
   if (ativa) sub = `${execucaoEhReels(exec) ? "Fazendo um <b>Reels do Instagram</b>: estação" : "Trabalhando na estação"} <b>${esc(ativa.rotulo)}</b>`;
   else if (exec.ativa) sub = preparando ? "Lendo os pedidos e preparando as máquinas…" : "Terminando…";
-  else sub = `Parada. Próximo vídeo ${proximoVideo(cfg.horarios)}.`;
+  else sub = `Parada. Próxima postagem ${proximaPostagem()}.`;
   const falha = d.estado.ultima_falha;
   if (!exec.ativa && falha && Date.now() - new Date(falha.quando) < 24 * 3600 * 1000)
     sub += ` <span style="color:var(--vermelho)">Última falha: estação ${esc(falha.estacao)}, ${haQuanto(falha.quando)}.</span>`;
@@ -360,7 +375,10 @@ function cartaoVideo(v, modo) {
   const etiquetas = [`<span class="etiqueta ${p ? "processando" : v.status}">${p ? "⏳ " + esc(ACOES_TEXTO[p.acao]) : esc(STATUS[v.status] || v.status)}</span>`];
   if (v.tipo === "teste") etiquetas.push('<span class="etiqueta">teste</span>');
   if (v.tipo === "refazer") etiquetas.push('<span class="etiqueta">refeito</span>');
-  const meta = [v.referencia, v.duracao_seg ? `${v.duracao_seg} s` : "", dataCurta(v.data)].filter(Boolean).map(esc).join(" · ");
+  const meta = [v.referencia, v.duracao_seg ? `${v.duracao_seg} s` : ""].filter(Boolean).map(esc).join(" · ");
+  const q = quandoPostar(v.postar_em);
+  if (q && ["aguardando", "aprovado"].includes(v.status))
+    etiquetas.push(`<span class="etiqueta ${q.passou ? "atrasado" : "horario"}">${q.passou ? "⚠️ era para " : "📅 postar "}${esc(q.rotulo)}</span>`);
   let acoes = "";
   if (modo === "aprovacao") {
     acoes = `<button class="botao principal pequeno" data-acao="aprovar" data-id="${v.id}" ${p ? "disabled" : ""}>${icone("ok")}Aprovar</button>
@@ -393,15 +411,45 @@ function cartaoVideo(v, modo) {
 }
 
 function pgAprovacao() {
-  const fila = videosCom("aguardando");
-  const sub = fila.length ? `${fila.length} vídeo(s) esperando você. Assista, aprove ou peça para refazer.` : "Tudo em dia por aqui.";
-  const vazio = `<div class="vazio vidro cartao"><img src="${logo()}" alt="">Nada esperando aprovação.<br>O próximo vídeo sai ${proximoVideo(app.dados.estado.config?.horarios)}.</div>`;
+  const fila = videosCom("aguardando").sort(porHorario);
+  const sub = fila.length ? `${fila.length} vídeo(s) esperando você, na ordem dos horários de postagem. Assista, aprove ou peça para refazer.` : "Tudo em dia por aqui.";
+  const vazio = `<div class="vazio vidro cartao"><img src="${logo()}" alt="">Nada esperando aprovação.<br>Próxima postagem ${proximaPostagem()}.</div>`;
   return topo("aprovação", sub) + (fila.length ? `<div class="fila">${fila.map((v) => cartaoVideo(v, "aprovacao")).join("")}</div>` : vazio);
+}
+
+function agendaDoDia(dia, titulo) {
+  const shorts = (app.dados?.videos || []).filter((v) => !ehReels(v) && v.postar_em && v.postar_em.slice(0, 10) === dia &&
+    ["aguardando", "aprovado", "programado", "publicado"].includes(v.status));
+  const naFila = new Set((app.dados?.estado?.fila || []).filter((t) => t.horario).map((t) => t.horario.slice(0, 16)));
+  const agora = new Date();
+  const linhas = postagem().map((h) => {
+    const v = shorts.find((x) => x.postar_em.slice(11, 16) === h);
+    const iso = `${dia}T${h}`, passou = new Date(`${iso}:00-03:00`) < agora;
+    let titulo = "", estado, classe = "", acoes = "";
+    if (v) titulo = `<b>${esc(v.titulo)}</b>`;
+    if (v && v.status === "publicado") { estado = "✅ postado"; classe = "sucesso"; }
+    else if (v && v.status === "programado") { estado = "📅 programado no YouTube"; classe = "sucesso"; }
+    else if (v && v.status === "aprovado") {
+      estado = passou ? "⚠️ passou da hora: poste assim que puder" : "pronto para postar"; classe = passou ? "falha" : "andamento";
+      acoes = `<button class="botao pequeno" data-acao="baixar" data-id="${v.id}">${icone("baixar")}Baixar</button>
+        <button class="botao principal pequeno" data-acao="publicado" data-id="${v.id}">${icone("ok")}Já postei</button>`;
+    } else if (v) {
+      estado = "esperando aprovação";
+      acoes = `<button class="botao pequeno" data-acao="assistir" data-id="${v.id}">${icone("play")}Assistir e aprovar</button>`;
+    } else if (passou) estado = "sem vídeo";
+    else if ([...naFila].some((x) => x.startsWith(iso))) { estado = "⏳ na fila da fábrica"; classe = "andamento"; }
+    else estado = "a fábrica vai preparar";
+    const apagado = passou && !(v && ["publicado", "programado", "aprovado"].includes(v.status));
+    return `<div class="lista-item${apagado ? " passado" : ""}"><span class="bolinha ${classe}"></span>
+      <span class="hora mono">${h}</span><span class="texto">${titulo}<small>${estado}</small>${acoes ? `<span class="linha-acoes">${acoes}</span>` : ""}</span></div>`;
+  }).join("");
+  const feitos = shorts.filter((v) => ["publicado", "programado"].includes(v.status)).length;
+  return `<div class="cartao vidro"><h2>${titulo} <small>${feitos} de ${postagem().length} postados</small></h2><div class="lista agenda-dia">${linhas}</div></div>`;
 }
 
 function pgAgenda() {
   const cfg = app.dados.estado.config || {};
-  const prontos = videosCom("aprovado");
+  const prontos = videosCom("aprovado").sort(porHorario);
   const programados = videosCom("programado").sort((a, b) => (a.youtube?.agendado_para || "").localeCompare(b.youtube?.agendado_para || ""));
   const publicados = videosCom("publicado").slice(0, 10);
   const banner = cfg.youtube_auto ? "" : `<div class="aviso-banner"><b>Como postar:</b> toque em <b>Baixar</b>, abra o app do YouTube › <b>+</b> › <b>Enviar um vídeo</b>, cole o título e publique (ou programe). Depois toque em <b>Já postei</b>. O envio automático só pode ser ligado quando a Google aprovar a auditoria do seu projeto (veja Configurações).</div>`;
@@ -410,8 +458,12 @@ function pgAgenda() {
     ${v.youtube?.id ? `<a class="botao pequeno" target="_blank" rel="noopener" href="https://studio.youtube.com/video/${esc(v.youtube.id)}/edit">${icone("externo")}</a>` : ""}</div>`).join("");
   const listaPub = publicados.map((v) => `<div class="lista-item"><span class="mini">${previa(v).jpg ? `<img data-asset="${previa(v).jpg}" alt="">` : ""}</span>
     <span class="texto"><b>${esc(v.titulo)}</b><small>✅ ${dataCurta(v.publicado_em || v.data)}</small></span></div>`).join("");
-  return topo("agenda", `${prontos.length} pronto(s) para postar · ${programados.length} programado(s)`) + banner +
+  const amanha = new Date(agoraBrasilia().getTime() + 86400000);
+  const diaAmanha = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, "0")}-${String(amanha.getDate()).padStart(2, "0")}`;
+  return topo("agenda", `${postagem().length} postagens por dia · próxima ${proximaPostagem()} · ${prontos.length} pronto(s) para postar`) + banner +
+    agendaDoDia(hojeBrasilia(), "Hoje") +
     (prontos.length ? `<h2 class="mono" style="font-size:15px;margin:4px 0 12px">Prontos para postar</h2><div class="fila" style="margin-bottom:18px">${prontos.map((v) => cartaoVideo(v, "postar")).join("")}</div>` : "") +
+    agendaDoDia(diaAmanha, "Amanhã") +
     `<div class="cartao vidro"><h2>Programados no YouTube</h2><div class="lista">${listaProg || '<p class="sub">Nenhum vídeo programado.</p>'}</div></div>
      <div class="cartao vidro"><h2>Publicados</h2><div class="lista">${listaPub || '<p class="sub">Nenhum vídeo marcado como publicado ainda.</p>'}</div></div>`;
 }
@@ -559,7 +611,7 @@ function pgConfig() {
     </div>
     <div class="cartao vidro"><h2>Agenda e vídeo</h2>
       <ul class="checklist">
-        ${item(true, "Vídeo novo todo dia", `às ${(cfg.horarios || [9]).map((h) => h + "h").join(", ")} (horário de Brasília). Para mudar: variável HORARIOS, ex.: 9,18.`)}
+        ${item(true, `${postagem().length} postagens por dia`, `${postagem().join(", ")} (horário de Brasília). A fábrica deixa cada vídeo pronto para aprovação até 16 horas antes. Para mudar: variável POSTAGEM, ex.: 09:00,12:00,18:30.`)}
         ${item(true, "Duração", `${cfg.duracao_alvo || 60} segundos. Variável DURACAO_ALVO_SEG.`)}
         ${item(true, "Voz", esc(cfg.voz || "pt-BR-AntonioNeural") + ". Variável VOZ.")}
         ${item(true, "Reels do Instagram", `Final com o botão “${esc(cfg.instagram_cta || "Peça o seu site")}” e ${esc(cfg.instagram_arroba || "@_clover.sd_")}. Variáveis INSTAGRAM_CTA e INSTAGRAM_ARROBA.`)}

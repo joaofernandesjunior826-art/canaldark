@@ -2,6 +2,8 @@
 // Quem chama é você, pelo painel, com a sua chave do GitHub. O valor nunca volta para o navegador.
 import { REPO, gh, ErroGitHub, responder, responderErro, tokenDoPedido } from "./_github.js";
 import { ARQUIVO, NOMES, cifrar } from "./_cofre.js";
+// Os pedidos saem assinados como "Painel Clover" (sem o e-mail pessoal de quem usa o painel).
+const PAINEL = { name: "Painel Clover", email: "painel-clover@users.noreply.github.com" };
 
 async function lerCofre(token) {
   const r = await gh(token, `/repos/${REPO}/contents/${ARQUIVO}`);
@@ -33,7 +35,8 @@ export default async function handler(req, res) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `Painel: chave ${nome} ${valor ? "guardada" : "removida"}`,
+          committer: PAINEL, author: PAINEL,
+        message: `Painel: chave ${nome} ${valor ? "guardada" : "removida"}`,
           content: Buffer.from(JSON.stringify(cofre, null, 2) + "\n").toString("base64"),
           ...(sha ? { sha } : {}),
         }),

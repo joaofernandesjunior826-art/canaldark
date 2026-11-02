@@ -138,6 +138,13 @@ def _agenda(t: dict, enviar: bool) -> None:
         item["ajuste"] = t["ajuste"]
     if tarefa.get("origem"):
         item["origem"] = tarefa["origem"]
+    if tarefa.get("horario"):
+        item["postar_em"] = tarefa["horario"]
+    elif tarefa["tipo"] == "extra":  # vídeo avulso: fica com o próximo horário livre, se houver
+        from . import acoes
+        livres = acoes.horarios_livres(estado.ler_estado())
+        if livres:
+            item["postar_em"] = livres[0].isoformat(timespec="minutes")
     if not enviar:
         return
     if github.ativo():

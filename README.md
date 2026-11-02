@@ -1,6 +1,7 @@
 # Clover · Fábrica de Shorts (Histórias da Bíblia) e Reels da Clover
 
-Uma fábrica que faz sozinha, todo dia, um YouTube Short contando uma história da Bíblia, e um
+Uma fábrica que faz sozinha, todo dia, 15 YouTube Shorts contando histórias da Bíblia (um para cada
+um dos 15 melhores horários de postagem), e um
 **painel** com a marca Clover onde você acompanha a produção ao vivo e aprova cada vídeo.
 Ela também faz **Reels de 15 s para o Instagram da Clover**: um site-conceito criado pela IA,
 rolando na tela de um notebook (veja [Reels da Clover](#reels-da-clover-instagram)).
@@ -12,7 +13,7 @@ Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 
 | # | Estação | O que faz (grátis) |
 |---|---|---|
-| 1 | Pauta | Escolhe a próxima história de `dados/historias.txt` (90 histórias, sem repetir) |
+| 1 | Pauta | Escolhe a próxima história de `dados/historias.txt` (368 histórias, sem repetir) |
 | 2 | Roteiro | Gemini escreve o texto, o título, a descrição e as hashtags |
 | 3 | Narração | Voz neural em português (edge-tts) |
 | 4 | Cenas | Pinturas clássicas da própria história (Wikimedia, domínio público) com movimento lento, misturadas com vídeos de paisagem do Pixabay ou Pexels |
@@ -30,8 +31,9 @@ estação o vídeo está.
   opcional) e a atividade recente.
 - **Aprovação:** os vídeos esperando você. Assista, **Aprove**, **Refaça** (pode escrever o que mudar,
   ex.: "mais curto", "comece pela batalha") ou **Descarte**.
-- **Agenda:** os aprovados prontos para postar (baixar, copiar título, "Já postei"), os programados
-  e os publicados.
+- **Agenda:** os 15 horários de hoje e de amanhã, cada um com o seu vídeo (postado, pronto para
+  postar, esperando aprovação ou na fábrica), os aprovados prontos para postar (baixar, copiar título,
+  "Já postei"), os programados e os publicados.
 - **Vídeos**, **Histórias** (faça qualquer história da lista na hora) e **Configurações** (o que
   já está pronto e o que falta).
 - **Instagram:** escolha o segmento (barbearia, academia, clínica...) e toque em **Criar Reels**.
@@ -82,8 +84,26 @@ criar uma chave só para o painel. Na página do GitHub:
 A chave fica salva só no seu aparelho. Para tirar: **Configurações › Desconectar**.
 
 ### 5. Primeiro vídeo
-No painel: **Fábrica › Produzir**. Em uns 3 minutos o vídeo aparece em **Aprovação**.
-A partir daí é automático: um vídeo novo todo dia às 9h (horário de Brasília).
+No painel: **Fábrica › Produzir**. Em uns 5 minutos o vídeo aparece em **Aprovação**.
+A partir daí é automático: veja a **Agenda de postagem** abaixo.
+
+## Agenda de postagem (15 Shorts por dia)
+Horários (Brasília), escolhidos pelos picos de audiência de Shorts no Brasil (manhã, almoço, fim de
+tarde e noite): **06:30, 08:00, 09:30, 11:00, 12:00, 13:00, 14:30, 16:00, 17:30, 18:30, 19:30, 20:30,
+21:15, 22:00 e 23:00**.
+
+- A fábrica confere a agenda de hora em hora e deixa um vídeo pronto para aprovação para cada
+  horário das próximas 16 horas, um atrás do outro (de noite ela já prepara os da manhã seguinte).
+- Cada vídeo mostra em **Aprovação** e na **Agenda** o horário em que deve ser postado.
+- Descartou? A fábrica faz outro para o mesmo horário. Pediu para refazer? A versão nova fica no
+  mesmo horário.
+- Dica: no app do YouTube você pode enviar vários de uma vez e **programar** cada um para o seu
+  horário (Visibilidade › Programar). Depois toque em **Já postei** no painel.
+- Para mudar os horários: variável `POSTAGEM` (ex.: `09:00,12:00,18:30`); para mudar a antecedência:
+  `ANTECEDENCIA_HORAS` (padrão 16). Confira no YouTube Studio › Público quando o seu público está
+  online e ajuste.
+- **Atenção:** o YouTube não monetiza conteúdo repetitivo ou "feito em massa". Com 15 por dia,
+  revise de verdade, refaça ou descarte os mais fracos e varie os temas.
 
 > Já existe um vídeo **[TESTE]** na fila de aprovação, feito pela fábrica sem nenhuma chave, para
 > você ver o painel funcionando. Pode descartar.
@@ -147,7 +167,8 @@ Em **Settings › Secrets and variables › Actions › Variables**:
 
 | Variável | Padrão | O que faz |
 |---|---|---|
-| `HORARIOS` | `9` | Hora(s) de Brasília do vídeo do dia. `9,18` = dois por dia. |
+| `POSTAGEM` | os 15 horários acima | Horários de postagem (Brasília); um vídeo por horário. |
+| `ANTECEDENCIA_HORAS` | `16` | Quantas horas antes de cada horário o vídeo fica pronto. |
 | `DURACAO_ALVO_SEG` | `60` | Duração do Short (máximo 170). |
 | `VOZ` | `pt-BR-AntonioNeural` | Também: `pt-BR-FranciscaNeural`, `pt-BR-ThalitaMultilingualNeural`. |
 | `VELOCIDADE_VOZ` | `+8%` | Ritmo da narração. |
@@ -161,8 +182,10 @@ Em **Settings › Secrets and variables › Actions › Variables**:
   as suas, coloque `.mp3` em `musica/` (ex.: da Biblioteca de áudio do YouTube, sem atribuição).
 
 ## Limites e custos
-- **GitHub Actions:** repositório privado tem 2.000 minutos/mês. A conferência de hora em hora usa
-  ~500 por mês, cada vídeo ~3 minutos e cada botão do painel ~1 minuto.
+- **GitHub Actions:** em repositório **público** os minutos são grátis e ilimitados (necessário para 15
+  vídeos por dia: cada vídeo usa uns 6 minutos). Em repositório privado o plano grátis cobre uns 2.000
+  minutos por mês. As chaves continuam protegidas num repositório público: ficam criptografadas e o
+  segredo que as abre só existe na Vercel.
 - **Vercel:** plano Hobby, grátis.
 - **Gemini / Pexels / Telegram:** bem dentro dos limites gratuitos.
 

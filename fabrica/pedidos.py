@@ -6,11 +6,11 @@ def _status(e: dict) -> str:
     videos = estado.historico()
     aguardando = sum(1 for v in videos if v.get("status") == "aguardando")
     aprovados = sum(1 for v in videos if v.get("status") in ("aprovado", "programado"))
-    horas = ", ".join(f"{h}h" for h in config.HORARIOS)
+    horas = ", ".join(f"{h:02d}:{m:02d}" for h, m in config.POSTAGEM)
     linhas = [f"⏳ Esperando aprovação: {aguardando}",
               f"✅ Aprovados ou programados: {aprovados}",
               f"📋 Pedidos na fila: {len(e['fila'])}",
-              f"🕘 Vídeo novo todo dia às {horas} (horário de Brasília)"]
+              f"🕘 {len(config.POSTAGEM)} postagens por dia: {horas} (horário de Brasília)"]
     ultimo = estado.ultimo_video()
     if ultimo:
         linhas.append(f"🎬 Último: “{telegram.html(ultimo['titulo'])}” em {ultimo['data'][:16].replace('T', ' ')}")

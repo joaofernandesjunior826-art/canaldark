@@ -2,9 +2,9 @@ name: Fábrica de Shorts
 
 on:
   schedule:
-    # De hora em hora, das 07:23 às 23:23 (Brasília): lê os pedidos do Telegram e, se já passou
-    # do horário do vídeo do dia (variável HORARIOS, padrão 9h), produz o vídeo.
-    - cron: "23 10-23,0-2 * * *"
+    # De hora em hora: confere a agenda de postagem (um vídeo pronto para cada horário das próximas
+    # 16 horas), lê os pedidos do Telegram e produz o que faltar, um vídeo atrás do outro.
+    - cron: "23 * * * *"
   push:
     # Cada botão do painel grava um pedido em dados/pedidos/ e isso dispara a fábrica na hora.
     paths:
@@ -53,7 +53,8 @@ jobs:
       YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
       GITHUB_TOKEN: ${{ github.token }}
       # Ajustes opcionais: Settings > Secrets and variables > Actions > Variables
-      HORARIOS: ${{ vars.HORARIOS }}
+      POSTAGEM: ${{ vars.POSTAGEM }}
+      ANTECEDENCIA_HORAS: ${{ vars.ANTECEDENCIA_HORAS }}
       DURACAO_ALVO_SEG: ${{ vars.DURACAO_ALVO_SEG }}
       VOZ: ${{ vars.VOZ }}
       VELOCIDADE_VOZ: ${{ vars.VELOCIDADE_VOZ }}

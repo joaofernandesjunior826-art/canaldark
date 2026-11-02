@@ -407,3 +407,15 @@ a.lista-item:hover b { color: var(--lavanda); }
   .chips > .chip { justify-self: start; }
   .chips::-webkit-scrollbar { display: none; }
 }
+
+/* Agenda de postagem */
+.etiqueta.horario { color: var(--azul); }
+.etiqueta.atrasado { color: var(--amarelo); border-color: rgba(251,191,36,.35); }
+.agenda-dia .hora { font-weight: 700; font-size: 14px; min-width: 46px; color: var(--texto); }
+.agenda-dia .lista-item { padding: 10px 4px; align-items: flex-start; }
+.agenda-dia .lista-item .bolinha { margin-top: 6px; }
+.agenda-dia .hora { margin-top: 1px; }
+.agenda-dia .linha-acoes { margin-top: 8px; }
+.agenda-dia .lista-item small { font-size: 13px; color: var(--texto-2); }
+.agenda-dia .lista-item small b { color: var(--texto); font-weight: 600; }
+.agenda-dia .passado { opacity: .55; }

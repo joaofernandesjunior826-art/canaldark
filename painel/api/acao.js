@@ -2,6 +2,8 @@
 // Grava o pedido como um arquivo em dados/pedidos/. Isso dispara a fábrica na hora (on: push),
 // e nenhum pedido se perde mesmo se você apertar vários botões seguidos.
 import { REPO, gh, ErroGitHub, responder, responderErro, tokenDoPedido } from "./_github.js";
+// Os pedidos saem assinados como "Painel Clover" (sem o e-mail pessoal de quem usa o painel).
+const PAINEL = { name: "Painel Clover", email: "painel-clover@users.noreply.github.com" };
 
 const ACOES = new Set(["produzir", "teste", "instagram", "aprovar", "refazer", "descartar", "publicado"]);
 const PRECISA_ID = new Set(["aprovar", "refazer", "descartar", "publicado"]);
@@ -27,6 +29,7 @@ export default async function handler(req, res) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        committer: PAINEL, author: PAINEL,
         message: `Painel: ${acao}${id ? " " + id : ""}${acao === "instagram" && pedido.tema ? ` (${pedido.tema.replace(/[\r\n]/g, " ").slice(0, 60)})` : ""}`,
         content: Buffer.from(JSON.stringify(pedido, null, 2) + "\n").toString("base64"),
       }),

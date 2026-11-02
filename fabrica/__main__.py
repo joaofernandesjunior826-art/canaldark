@@ -22,7 +22,7 @@ def _config_atual() -> dict:
     """O que está configurado (sem revelar nenhuma chave), para o painel mostrar o que falta."""
     return {"gemini": bool(config.GEMINI_API_KEY), "pexels": bool(config.PEXELS_API_KEY),
             "pixabay": bool(config.PIXABAY_API_KEY), "telegram": telegram.ativo(),
-            "youtube_auto": youtube.configurado(), "horarios": config.HORARIOS,
+            "youtube_auto": youtube.configurado(), "postagem": [f"{h:02d}:{m:02d}" for h, m in config.POSTAGEM],
             "yt_horarios": config.YT_HORARIOS, "duracao_alvo": config.DURACAO_ALVO, "voz": config.VOZ,
             "instagram_cta": config.INSTAGRAM_CTA, "instagram_arroba": config.INSTAGRAM_ARROBA}
 
@@ -47,18 +47,20 @@ def planejar() -> None:
     if telegram.ativo():
         pedidos.processar(e)
 
-    # 4) Agenda: vídeo do dia
+    # 4) Agenda de postagem: um vídeo pronto para cada horário das próximas horas
     if not config.GEMINI_API_KEY:
         print("Falta cadastrar GEMINI_API_KEY nos Secrets do GitHub; nada novo será produzido.")
     elif estado.falhas_hoje(e) >= config.MAX_FALHAS_POR_DIA:
         print("Muitas falhas hoje; a fábrica volta amanhã.")
-    elif acoes.video_do_dia_pendente(e):
-        acoes.enfileirar(e, {"tipo": "novo"})
+    else:
+        novos = acoes.preparar_agenda(e)
+        if novos:
+            print(f"Agenda: {novos} horário(s) de postagem sem vídeo; entraram na fila.")
 
     # 5) Escolhe o próximo vídeo a produzir (um por execução; o resto espera a próxima)
     producao, tipo = False, "shorts"
     if not etapas.ler_trabalho():
-        for tarefa in list(e["fila"]):
+        for tarefa in sorted(e["fila"], key=acoes.prioridade):
             pode = config.GEMINI_API_KEY or tarefa["tipo"] == "teste" or tarefa.get("exemplo")
             if tarefa["tipo"] in acoes.TAREFAS_DE_PRODUCAO and pode:
                 e["fila"].remove(tarefa)

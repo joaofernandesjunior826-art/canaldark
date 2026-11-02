@@ -40,12 +40,26 @@ PIXABAY_API_KEY = _chave("PIXABAY_API_KEY")
 TELEGRAM_BOT_TOKEN = _chave("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = _chave("TELEGRAM_CHAT_ID")
 
-# ---- Agenda -----------------------------------------------------------------
-# Horas (de Brasília) em que sai um vídeo novo. "9" = um por dia; "9,18" = dois por dia.
-HORARIOS = sorted({int(h) for h in _env("HORARIOS", "9").replace(" ", "").split(",")
-                   if h.isdigit() and int(h) < 24}) or [9]
-MAX_FALHAS_POR_DIA = 3     # depois disso a fábrica para até o dia seguinte
-MANTER_PREVIAS = 40        # quantos vídeos recentes ficam guardados para o painel
+# ---- Agenda de postagem no YouTube ------------------------------------------
+# Os horários (de Brasília) em que você posta um Short: um vídeo por horário. A fábrica deixa cada
+# vídeo pronto para aprovação com antecedência. Padrão: os 15 melhores horários para Shorts no
+# Brasil (picos de manhã, almoço, fim de tarde e noite). Para mudar: variável POSTAGEM.
+POSTAGEM_PADRAO = "06:30,08:00,09:30,11:00,12:00,13:00,14:30,16:00,17:30,18:30,19:30,20:30,21:15,22:00,23:00"
+
+
+def _horarios(texto: str) -> list[tuple[int, int]]:
+    saida = set()
+    for parte in texto.replace(" ", "").replace("h", ":").split(","):
+        hora, _, minuto = parte.partition(":")
+        if hora.isdigit() and int(hora) < 24 and (not minuto or (minuto.isdigit() and int(minuto) < 60)):
+            saida.add((int(hora), int(minuto or 0)))
+    return sorted(saida)
+
+
+POSTAGEM = _horarios(_env("POSTAGEM", POSTAGEM_PADRAO)) or _horarios(POSTAGEM_PADRAO)
+ANTECEDENCIA_HORAS = min(max(_numero("ANTECEDENCIA_HORAS", 16), 2), 36)  # quanto antes o vídeo fica pronto
+MAX_FALHAS_POR_DIA = 10    # depois disso a fábrica para até o dia seguinte
+MANTER_PREVIAS = 60        # quantos vídeos recentes ficam guardados para o painel
 
 # ---- Roteiro ----------------------------------------------------------------
 # Modelos gratuitos tentados em ordem. "gemini-flash-latest" aponta sempre para o Flash mais novo.

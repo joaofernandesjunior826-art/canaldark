@@ -90,6 +90,8 @@ def avisar_novo(video: Path, item: dict) -> list[int]:
         return []
     linhas = [f"🎬 <b>{html(item['titulo'])}</b>",
               f"📖 {html(item.get('referencia', ''))} · ⏱ {item.get('duracao_seg', 0)} s"]
+    if item.get("postar_em"):
+        linhas.append(f"📅 Postar às {item['postar_em'][11:16]} do dia {item['postar_em'][8:10]}/{item['postar_em'][5:7]}")
     if item.get("ajuste"):
         linhas.append(f"✏️ Ajuste aplicado: <i>{html(item['ajuste'][:200])}</i>")
     linhas += ["", "Esperando a sua aprovação. Aprove aqui ou no painel; se não gostou, toque em "

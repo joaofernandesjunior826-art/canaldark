@@ -44,7 +44,12 @@ def enviar(video: Path, capa: Path | None, item: dict, ocupados: set[str]) -> di
     if "#shorts" not in descricao.lower():
         descricao += "\n\n#Shorts"
     status = {"selfDeclaredMadeForKids": False, "containsSyntheticMedia": True}
-    quando = proximo_horario(ocupados)
+    quando = None
+    if item.get("postar_em"):  # o horário da agenda de postagem, se ainda não passou
+        marcado = datetime.fromisoformat(item["postar_em"])
+        if marcado > datetime.now(timezone.utc) + timedelta(minutes=20):
+            quando = marcado
+    quando = quando or proximo_horario(ocupados)
     if quando:
         status.update(privacyStatus="private",
                       publishAt=quando.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))

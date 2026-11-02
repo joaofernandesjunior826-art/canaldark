@@ -1,4 +1,6 @@
 """Ações sobre os vídeos, venham elas do painel, do Telegram ou do botão "Run workflow" do GitHub."""
+from datetime import datetime, time, timedelta
+
 from . import config, estado, telegram, youtube
 
 TAREFAS_DE_PRODUCAO = ("novo", "extra", "refazer", "teste", "instagram")
@@ -12,13 +14,61 @@ def enfileirar(e: dict, tarefa: dict) -> bool:
     return True
 
 
-def video_do_dia_pendente(e: dict) -> bool:
+# ---- Agenda de postagem: um vídeo pronto para cada horário ------------------------
+OCUPA_HORARIO = ("aguardando", "aprovado", "programado", "publicado")
+
+
+def _texto(quando: datetime) -> str:
+    return quando.isoformat(timespec="minutes")
+
+
+def horarios_da_janela(agora: datetime | None = None) -> list[datetime]:
+    """Horários de postagem das próximas horas (os que ainda dá tempo de preparar e aprovar)."""
+    agora = agora or estado.agora()
+    inicio, fim = agora + timedelta(minutes=30), agora + timedelta(hours=config.ANTECEDENCIA_HORAS)
+    saida = []
+    for d in range(3):
+        dia = agora.date() + timedelta(days=d)
+        for h, m in config.POSTAGEM:
+            quando = datetime.combine(dia, time(h, m), tzinfo=config.FUSO)
+            if inicio <= quando <= fim:
+                saida.append(quando)
+    return saida
+
+
+def horarios_ocupados(e: dict) -> set[str]:
+    ocupados = {v["postar_em"] for v in estado.historico() if v.get("postar_em") and v.get("status") in OCUPA_HORARIO}
+    ocupados |= {t["horario"] for t in e["fila"] if t.get("horario")}
+    from .etapas import ler_trabalho  # o vídeo que está sendo feito agora também conta
+    t = ler_trabalho()
+    if t and t["tarefa"].get("horario"):
+        ocupados.add(t["tarefa"]["horario"])
+    return ocupados
+
+
+def horarios_livres(e: dict, agora: datetime | None = None) -> list[datetime]:
+    ocupados = horarios_ocupados(e)
+    return [q for q in horarios_da_janela(agora) if _texto(q) not in ocupados]
+
+
+def preparar_agenda(e: dict) -> int:
+    """Põe na fila um vídeo para cada horário das próximas horas que ainda não tem vídeo."""
+    novos = 0
+    for quando in horarios_livres(e):
+        novos += enfileirar(e, {"tipo": "novo", "horario": _texto(quando)})
+    return novos
+
+
+def prioridade(tarefa: dict) -> tuple:
+    """Ordem de produção: refazer primeiro; depois o horário mais próximo; os pedidos avulsos
+    (Reels, vídeo extra, teste) entram antes dos horários que ainda estão longe."""
     agora = estado.agora()
-    previstos = sum(1 for h in config.HORARIOS if agora.hour >= h)
-    feitos = sum(1 for v in estado.historico()
-                 if v.get("tipo") == "novo" and v.get("data", "")[:10] == estado.hoje())
-    na_fila = sum(1 for t in e["fila"] if t["tipo"] == "novo")
-    return feitos + na_fila < previstos
+    if tarefa["tipo"] == "refazer":
+        return (0, tarefa.get("horario") or "")
+    if tarefa.get("horario"):
+        perto = datetime.fromisoformat(tarefa["horario"]) - agora < timedelta(hours=3)
+        return (1 if perto else 3, tarefa["horario"])
+    return (2, "")
 
 
 def aplicar(e: dict, pedido: dict) -> str:
@@ -32,8 +82,7 @@ def aplicar(e: dict, pedido: dict) -> str:
     if acao in ("produzir", "novo"):
         if not config.GEMINI_API_KEY:
             return "Falta cadastrar a chave GEMINI_API_KEY nos Secrets do GitHub."
-        tipo = "novo" if video_do_dia_pendente(e) else "extra"
-        enfileirar(e, {"tipo": tipo, "tema": tema})
+        enfileirar(e, {"tipo": "extra", "tema": tema, "pedido": pedido.get("quando", "")})
         return f"Vídeo {'sobre ' + tema if tema else 'novo'} na fila."
     if acao == "continuar":  # a fábrica chamando a si mesma para o próximo pedido da fila
         return "Seguindo a fila."
@@ -60,6 +109,8 @@ def aplicar(e: dict, pedido: dict) -> str:
             return "Falta cadastrar a chave GEMINI_API_KEY nos Secrets do GitHub."
         tarefa = {"tipo": "teste"} if video.get("tipo") == "teste" else \
                  {"tipo": "refazer", "origem": video["id"], "ajuste": ajuste}
+        if video.get("postar_em") and tarefa["tipo"] == "refazer":
+            tarefa["horario"] = video["postar_em"]   # a versão nova fica no mesmo horário
         enfileirar(e, tarefa)
         return f"Refazendo “{video['titulo']}”."
     if acao == "aprovar":
