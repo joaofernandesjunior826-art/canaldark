@@ -11,9 +11,20 @@ import re
 FONTES_TITULO = ["Fraunces", "Playfair Display", "DM Serif Display", "Cormorant Garamond", "Instrument Serif",
                  "Bricolage Grotesque", "Syne", "Outfit", "Sora", "Space Grotesk", "Archivo", "Unbounded"]
 FONTES_TEXTO = ["Inter", "DM Sans", "Manrope", "Plus Jakarta Sans", "Outfit", "Sora"]
-MODELOS = ["editorial", "impacto", "luxo"]
+MODELOS = ["editorial", "luxo", "impacto", "minimal", "revista", "neon"]
+# Fontes de título que combinam com cada modelo (a do Gemini vale se estiver aqui; senão, sorteia uma)
+FAMILIAS = {
+    "editorial": ["Fraunces", "Playfair Display", "DM Serif Display", "Instrument Serif", "Bricolage Grotesque"],
+    "luxo": ["Cormorant Garamond", "Playfair Display", "Instrument Serif", "DM Serif Display"],
+    "impacto": ["Unbounded", "Syne", "Archivo", "Bricolage Grotesque", "Space Grotesk"],
+    "minimal": ["Inter", "Manrope", "Plus Jakarta Sans", "Outfit", "Sora"],
+    "revista": ["Playfair Display", "Fraunces", "DM Serif Display", "Instrument Serif", "Cormorant Garamond"],
+    "neon": ["Sora", "Space Grotesk", "Outfit", "Syne", "Unbounded"],
+}
+SERIFADAS = {"Fraunces", "Playfair Display", "DM Serif Display", "Cormorant Garamond", "Instrument Serif"}
 
-_PESOS = {"Cormorant Garamond": "ital,wght@0,500;0,600;0,700;1,500", "Instrument Serif": "ital@0;1",
+_PESOS = {"Inter": "wght@400;500;600;700;800", "Syne": "wght@500;600;700;800", "Space Grotesk": "wght@400;500;600;700",
+          "Cormorant Garamond": "ital,wght@0,500;0,600;0,700;1,500", "Instrument Serif": "ital@0;1",
           "Fraunces": "ital,opsz,wght@0,9..144,400..800;1,9..144,400..700",
           "Playfair Display": "ital,wght@0,500..900;1,500..700", "DM Serif Display": "ital@0;1",
           "Unbounded": "wght@400..800", "Archivo": "wght@400..900", "Bricolage Grotesque": "opsz,wght@12..96,400..800"}
@@ -199,7 +210,7 @@ JS_ANIMACAO = r"""
   // Cursor do mouse: em cada parada vai até um botão ou cartão e fica "em cima" dele.
   function planejarCursor(ini, fim) {
     const vh = innerHeight, menu = alturaMenu();
-    const seletor = ".botao, .card, .linha-preco, .vidro-card, .flutuante, .numeros > div, .numeros-luxo > div, .galeria .g, .lista li, .pontos span";
+    const seletor = ".alvo, .botao, .card, .linha-preco, .vidro-card, .flutuante, .numeros > div, .numeros-luxo > div, .galeria .g, .lista li, .pontos span";
     const todos = [...document.querySelectorAll(seletor)].map((el) => {
       const r = el.getBoundingClientRect();
       return { el, x: r.left, y: r.top + scrollY, w: r.width, h: r.height, botao: el.classList.contains("botao") };
@@ -310,6 +321,7 @@ JS_ANIMACAO = r"""
       else if (r.tipo === "imagem") s.clipPath = `inset(${(1 - p) * 100}% 0 0 0 round var(--raio))`;
       else if (r.tipo === "esquerda") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * -70}px)`; }
       else if (r.tipo === "direita") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * 70}px)`; }
+      else if (r.tipo === "barra") s.transform = `scaleY(${0.04 + 0.96 * p})`;
       else if (r.tipo === "3d") { s.opacity = clamp(k * 1.6); s.transform = `perspective(900px) rotateX(${(1 - p) * 16}deg) translateY(${(1 - p) * 70}px) scale(${0.94 + 0.06 * p})`; }
       else { s.opacity = clamp(k * 1.5); s.transform = `translateY(${(1 - p) * 46}px)`; }
     }
@@ -634,16 +646,27 @@ def _luxo(s: dict, img: dict) -> str:
 # ---- montagem final -----------------------------------------------------------
 def montar_site(s: dict, imagens: dict) -> str:
     """Devolve o HTML completo do site. `imagens` = {"hero": "img/hero.jpg", "item0": ..., "sobre0": ...}."""
-    modelo = s.get("modelo") if s.get("modelo") in ("editorial", "luxo") else "editorial"
+    from . import modelos as extras
+    modelo = s.get("modelo") if s.get("modelo") in MODELOS else "editorial"
+    sorte = sum(map(ord, s.get("marca", ""))) + len(s.get("segmento", ""))
     cores = dict(s.get("cores") or {})
-    if modelo == "luxo" and _luminancia(_hex(cores.get("fundo"), "#f6f1ea")) >= 0.2:
-        cores.update(fundo="#0e0d0c", texto="#f4efe7", superficie="#1a1816")  # o luxo é sempre escuro
+    claro = _luminancia(_hex(cores.get("fundo"), "#f6f1ea")) >= 0.2
+    if modelo in ("luxo", "neon") and claro:          # sempre escuros
+        cores.update(fundo="#0e0d0c" if modelo == "luxo" else "#07070c", texto="#f4efe7" if modelo == "luxo" else "#eeedfb",
+                     superficie="#1a1816" if modelo == "luxo" else "#12121c")
+    if modelo in ("minimal", "revista") and not claro:  # sempre claros
+        cores.update(fundo="#f7f6f2" if modelo == "minimal" else "#f2ede3", texto="#141414", superficie="#ecebe6" if modelo == "minimal" else "#e7e0d2")
     p = paleta(cores)
-    f_titulo = s.get("fonte_titulo") if s.get("fonte_titulo") in FONTES_TITULO else "Fraunces"
+    familia = FAMILIAS[modelo]
+    f_titulo = s.get("fonte_titulo") if s.get("fonte_titulo") in familia else familia[sorte % len(familia)]
     f_texto = s.get("fonte_texto") if s.get("fonte_texto") in FONTES_TEXTO else "Inter"
-    serifada = f_titulo in FONTES_TITULO[:5]
-    corpo = (_luxo if modelo == "luxo" else _editorial)(s, imagens)
-    css_modelo = CSS_LUXO if modelo == "luxo" else CSS_EDITORIAL
+    serifada = f_titulo in SERIFADAS
+    if modelo in extras.MODELOS:
+        funcao, css_modelo = extras.MODELOS[modelo]
+        corpo = funcao(s, imagens)
+    else:
+        corpo = (_luxo if modelo == "luxo" else _editorial)(s, imagens)
+        css_modelo = CSS_LUXO if modelo == "luxo" else CSS_EDITORIAL
     links = "".join(f"<a>{_e(x)}</a>" for x in s.get("menu", [])[:4])
     inicial = _e(s["marca"][:1].upper())
     return f"""<!doctype html>
@@ -654,7 +677,7 @@ def montar_site(s: dict, imagens: dict) -> str:
 <style>
 :root{{--fundo:{p["fundo"]};--texto:{p["texto"]};--destaque:{p["destaque"]};--sobre-destaque:{p["sobre_destaque"]};
   --superficie:{p["superficie"]};--suave:{p["suave"]};--linha:{p["linha"]};
-  --f-titulo:"{f_titulo}";--f-texto:"{f_texto}";--peso-titulo:{500 if serifada else 700};--esp-titulo:{"-0.02em" if serifada else "-0.045em"}}}
+  --f-titulo:"{f_titulo}";--f-texto:"{f_texto}";--peso-titulo:{500 if serifada else 800 if modelo == "impacto" else 700};--esp-titulo:{"-0.02em" if serifada else "-0.045em"}}}
 {CSS_BASE}{css_modelo}
 </style></head>
 <body>

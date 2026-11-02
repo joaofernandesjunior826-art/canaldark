@@ -51,9 +51,20 @@ def roteiro(t: dict) -> None:
     else:
         _, marcas = conceito.recentes_do_historico(estado.historico())
         ficha = conceito.gerar_ficha(t["segmento"], t.get("ajuste", ""), marcas)
+    ficha["modelo"] = _modelo_da_vez(ficha.get("modelo"), _semente(t))
     t["ficha"] = ficha
     _salvar(t, "ficha.json", ficha)
     print(f"Conceito: {ficha['marca']} ({ficha['modelo']}, {ficha['fonte_titulo']})")
+
+
+def _modelo_da_vez(preferido: str | None, semente: int) -> str:
+    """Rodízio dos modelos de site: nunca repete nenhum dos últimos (todos os Reels ficam diferentes)."""
+    reels = [v for v in estado.historico() if v.get("tipo") == "instagram"]
+    recentes = [v.get("modelo") for v in reels[-(len(sites.MODELOS) - 1):]]
+    if preferido in sites.MODELOS and preferido not in recentes:
+        return preferido
+    livres = [m for m in sites.MODELOS if m not in recentes] or sites.MODELOS
+    return random.Random(semente).choice(livres)
 
 
 def narracao(t: dict) -> None:

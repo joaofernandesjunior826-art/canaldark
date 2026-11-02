@@ -44,8 +44,9 @@ Regras:
   preto, verde-floresta, azul-noite); "destaque" é a cor da marca; "superficie" é um tom próximo do
   fundo, para cartões.
 - "fonte_titulo" uma destas: {fontes_titulo}. "fonte_texto" uma destas: {fontes_texto}.
-- "modelo": "editorial" (claro, elegante), "luxo" (escuro, sofisticado) ou "impacto" (cores fortes,
-  letras grandes). Escolha o que combina com o segmento.
+- "modelo": "editorial" (claro, elegante), "luxo" (escuro, sofisticado), "impacto" (cores fortes,
+  letras gigantes), "minimal" (limpo, centralizado), "revista" (estilo jornal/revista) ou "neon"
+  (escuro e tecnológico). Escolha o que combina com o segmento.
 - "imagens": buscas EM INGLÊS, de 2 a 4 palavras, por fotos reais e bonitas de banco de imagens que
   combinem com o segmento (pessoas trabalhando, produto, ambiente). Nada de logotipo ou texto.
 - "legenda": legenda para o post do Instagram da Clover (até 500 caracteres): uma primeira linha que
