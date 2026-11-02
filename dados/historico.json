@@ -157,7 +157,7 @@
   {
     "id": "20261101-220743",
     "tipo": "extra",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "A Torre de Babel",
     "referencia": "Gênesis 11",
     "titulo": "O Dia em que Deus Parou a Maior Construção da Terra",
@@ -175,7 +175,8 @@
     "duracao_seg": 70,
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-01T22:15:57-03:00"
+    "aprovado_em": "2026-11-01T22:21:46-03:00",
+    "publicado_em": "2026-11-01T22:21:46-03:00"
   },
   {
     "id": "20261101-221557",
