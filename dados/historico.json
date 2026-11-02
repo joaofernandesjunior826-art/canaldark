@@ -300,5 +300,28 @@
     "duracao_seg": 15,
     "previa": true,
     "telegram": []
+  },
+  {
+    "id": "20261102-030327",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Adão e Eva e o fruto proibido",
+    "referencia": "Gênesis 3",
+    "titulo": "O dia em que o pecado entrou no mundo",
+    "descricao": "Descubra como a desobediência de Adão e Eva no Jardim do Éden mudou a história da humanidade para sempre. Uma reflexão profunda sobre escolhas e consequências baseada em Gênesis capítulo três. #Shorts #Bíblia #AdãoEEva #Gênesis",
+    "tags": [
+      "Adão e Eva",
+      "Gênesis 3",
+      "Fruto Proibido",
+      "Jardim do Éden",
+      "Histórias da Bíblia",
+      "Pecado Original",
+      "Gênesis"
+    ],
+    "data": "2026-11-02T03:15:47-03:00",
+    "duracao_seg": 69,
+    "postar_em": "2026-11-02T06:30-03:00",
+    "previa": true,
+    "telegram": []
   }
 ]
