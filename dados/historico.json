@@ -304,7 +304,7 @@
   {
     "id": "20261102-030327",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Adão e Eva e o fruto proibido",
     "referencia": "Gênesis 3",
     "titulo": "O dia em que o pecado entrou no mundo",
@@ -322,7 +322,8 @@
     "duracao_seg": 69,
     "postar_em": "2026-11-02T06:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T09:33:42-03:00"
   },
   {
     "id": "20261102-031607",
@@ -550,6 +551,29 @@
     "data": "2026-11-02T03:54:47-03:00",
     "duracao_seg": 60,
     "postar_em": "2026-11-02T19:30-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261102-093342",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "A sarça ardente",
+    "referencia": "Êxodo 3",
+    "titulo": "Por que esta planta pegava fogo e não virava cinzas?",
+    "descricao": "Moisés viu um espetáculo impressionante no monte Horebe: uma sarça queimava com fogo, mas não se consumia. Ali, Deus chamou seu servo para a missão de libertar o povo hebreu. Conforme registrado no livro de Êxodo, capítulo três. #Shorts #Bíblia #Moisés #Êxodo #Fé",
+    "tags": [
+      "sarca ardente",
+      "moises",
+      "exodo",
+      "monte horebe",
+      "deus",
+      "biblia",
+      "historias da biblia"
+    ],
+    "data": "2026-11-02T09:38:01-03:00",
+    "duracao_seg": 69,
+    "postar_em": "2026-11-02T20:30-03:00",
     "previa": true,
     "telegram": []
   }
