@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-02T09:30-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-02T11:00-03:00"
     },
     {
@@ -127,7 +123,19 @@
     "pixabay:204904",
     "pixabay:224007",
     "pixabay:36992",
-    "pixabay:78"
+    "pixabay:78",
+    "commons:182525600",
+    "commons:21897079",
+    "commons:23607722",
+    "commons:28503543",
+    "commons:31577552",
+    "commons:31584203",
+    "commons:37682929",
+    "commons:76054577",
+    "pixabay:138",
+    "pixabay:1971",
+    "pixabay:203681",
+    "pixabay:331030"
   ],
   "config": {
     "gemini": true,
@@ -157,5 +165,8 @@
     "voz": "pt-BR-AntonioNeural",
     "instagram_cta": "Peça o seu site",
     "instagram_arroba": "@_clover.sd_"
+  },
+  "gemini_esgotado": {
+    "gemini-3.8-flash": "2026-11-02"
   }
 }

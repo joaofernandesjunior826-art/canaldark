@@ -345,5 +345,28 @@
     "postar_em": "2026-11-02T08:00-03:00",
     "previa": true,
     "telegram": []
+  },
+  {
+    "id": "20261102-032158",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Abraão e o sacrifício de Isaque",
+    "referencia": "Gênesis 22",
+    "titulo": "A Provação de Abraão: A Fé que Não Duvidou de Deus",
+    "descricao": "Deus colocou a fé de Abraão à prova ao pedir o sacrifício de seu filho Isaque. Uma história emocionante de obediência, confiança e provisão divina em Gênesis 22. #Shorts #Bíblia #Abraão #Fé",
+    "tags": [
+      "Abraao",
+      "Isaque",
+      "Sacrificio de Isaque",
+      "Genesis 22",
+      "Historias da Biblia",
+      "Fe em Deus",
+      "Provisão Divina"
+    ],
+    "data": "2026-11-02T03:25:06-03:00",
+    "duracao_seg": 67,
+    "postar_em": "2026-11-02T09:30-03:00",
+    "previa": true,
+    "telegram": []
   }
 ]
