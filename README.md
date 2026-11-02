@@ -2,7 +2,7 @@
 
 Uma fábrica que faz sozinha, todo dia, um YouTube Short contando uma história da Bíblia, e um
 **painel** com a marca Clover onde você acompanha a produção ao vivo e aprova cada vídeo.
-Ela também faz **Reels de 30 s para o Instagram da Clover**: um site-conceito criado pela IA,
+Ela também faz **Reels de 20 s para o Instagram da Clover**: um site-conceito criado pela IA,
 rolando na tela de um notebook (veja [Reels da Clover](#reels-da-clover-instagram)).
 Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 
@@ -106,7 +106,7 @@ No painel, página **Instagram**: escolha um segmento (ou **Surpreenda-me**), es
 quiser (ex.: "tema escuro, cores verde e dourado") e toque em **Criar Reels**. Em uns 5 minutos o
 vídeo aparece em **Prontos para postar**, com a legenda pronta para copiar.
 
-O vídeo (1080x1920, 30 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
+O vídeo (1080x1920, 20 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
 a luz roxa da Clover, o site-conceito rolando na tela com animações, e o final com a marca Clover,
 "Seu site pode ser assim", o botão e o @ do Instagram. A trilha lo-fi é gerada na hora (sem direitos
 autorais); no Instagram você pode trocar por uma música em alta.

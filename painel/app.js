@@ -478,7 +478,7 @@ function pgInstagram() {
     pedindo ? `<p class="sub" style="margin-top:12px">⏳ ${esc(ACOES_TEXTO[pedindo.acao] || "Pedido enviado")}…</p>` : "";
   const dicaFotos = !cfg.pixabay && !cfg.pexels ? `<div class="aviso-banner"><b>Dica:</b> com a chave grátis do <b>Pixabay</b>, os sites ganham fotos profissionais do segmento. Cole em <a href="#config">Configurações › Chaves da fábrica</a>.</div>` : "";
   const dicaGemini = !cfg.gemini ? `<div class="aviso-banner">Sem a chave do Gemini, a fábrica faz um Reels de exemplo (barbearia). Cole a chave em <a href="#config">Configurações</a> para ela criar sites novos.</div>` : "";
-  return topo("instagram", "Reels de 30 s: um site-conceito da Clover rolando no notebook") + dicaGemini + dicaFotos + `
+  return topo("instagram", "Reels de 20 s: um site-conceito da Clover rolando no notebook") + dicaGemini + dicaFotos + `
     <div class="cartao vidro">
       <h2>Criar um Reels</h2>
       <p class="sub" style="margin:0 0 12px">Escolha o segmento do site (ou deixe a fábrica escolher). A IA inventa a marca, os textos e as cores.</p>
@@ -492,7 +492,7 @@ function pgInstagram() {
         </div>
       </form>
       ${andamento}
-      <p class="sub" style="margin-top:10px">Leva uns 5 minutos. Os sites são conceitos: as marcas são inventadas e a legenda já avisa isso.</p>
+      <p class="sub" style="margin-top:10px">Leva uns 4 minutos. Os sites são conceitos: as marcas são inventadas e a legenda já avisa isso.</p>
     </div>
     ${prontos.length ? `<h2 class="mono" style="font-size:15px;margin:4px 0 12px">Prontos para postar</h2><div class="fila" style="margin-bottom:18px">${prontos.map(cartaoReels).join("")}</div>` : ""}
     <div class="aviso-banner"><b>Como postar:</b> toque em <b>Baixar</b>, abra o Instagram › <b>+</b> › <b>Reels</b>, escolha o vídeo e, se quiser, uma música em alta. Toque em <b>Legenda</b> aqui para copiar o texto. Depois, <b>Já postei</b>.</div>

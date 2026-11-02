@@ -135,30 +135,53 @@ def _selo_giratorio(texto: str) -> str:
 
 # ---- animação (roda dentro do site, chamada pela cena) -------------------------
 JS_ANIMACAO = r"""
+<style>
+#cursor-clover{position:fixed;left:0;top:0;width:54px;height:54px;z-index:99999;pointer-events:none;will-change:transform;
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))}
+#progresso-clover{position:fixed;left:0;top:0;height:5px;width:100%;z-index:9999;transform-origin:0 50%;transform:scaleX(0);
+  background:linear-gradient(90deg,var(--destaque),color-mix(in srgb,var(--destaque) 55%,#fff))}
+.palavra{display:inline-block;will-change:transform,opacity}
+[data-paralaxe]{position:relative;height:118%!important;top:-9%}
+.botao{position:relative;overflow:hidden;isolation:isolate}
+.botao::after{content:"";position:absolute;top:-20%;bottom:-20%;width:42%;left:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(var(--brilho,-160%)) skewX(-18deg)}
+#clique-clover{position:fixed;left:0;top:0;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;z-index:99998;pointer-events:none;
+  border:3px solid rgba(255,255,255,.9);box-shadow:0 0 0 3px rgba(0,0,0,.25);opacity:0}
+</style>
 <script>
 "use strict";
 (function () {
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const saida = (k) => 1 - Math.pow(1 - clamp(k), 3);
+  const saida4 = (k) => 1 - Math.pow(1 - clamp(k), 4);
   const suave = (k) => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
   const molinha = (k) => { k = clamp(k); const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
-  const R = { revela: [], gira: [], flutua: [], letreiro: [], kb: [], conta: [], trechos: [], paradas: [0], inicio: 1.55 };
+  const R = { revela: [], gira: [], flutua: [], letreiro: [], kb: [], conta: [], trechos: [], paradas: [0], inicio: 1.1,
+              movs: [], alvos: [], clique: null, cursor: null, anel: null, palavras: [], paralaxe: [], barra: null };
 
-  function paradas() {
-    const max = document.documentElement.scrollHeight - innerHeight;
+  function alturaMenu() {
     const nav = document.querySelector(".nav");
-    const menu = nav && getComputedStyle(nav).position === "sticky" ? nav.offsetHeight : 0;
+    return nav && getComputedStyle(nav).position === "sticky" ? nav.offsetHeight : 0;
+  }
+  function paradas(maximo) {
+    const max = document.documentElement.scrollHeight - innerHeight, menu = alturaMenu();
     const ys = [0, ...[...document.querySelectorAll("[data-parada]")].map((el) =>
       Math.min(Math.max(el.getBoundingClientRect().top + scrollY - menu - (+el.dataset.parada || 0), 0), max))];
-    const unicos = [...new Set(ys.map(Math.round))].sort((a, b) => a - b);
-    return unicos.filter((y, i) => i === 0 || y - unicos[i - 1] > 140);
+    const unicos = [...new Set(ys.map(Math.round))].sort((a, b) => a - b).filter((y, i, l) => i === 0 || y - l[i - 1] > 140);
+    if (unicos.length <= maximo) return unicos;
+    const fica = [unicos[0]];                       // vídeo curto: pula algumas seções do meio
+    for (let i = 1; i < maximo - 1; i++) fica.push(unicos[Math.round(i * (unicos.length - 1) / (maximo - 1))]);
+    fica.push(unicos[unicos.length - 1]);
+    return [...new Set(fica)];
   }
-  // Rolagem: fica no topo enquanto o começo do site aparece, depois para em cada seção.
+  // Rolagem como a roda do mouse: cada mudança de seção são duas "puxadas" que desaceleram.
   function montarRolagem(ps, ini, fim) {
-    const n = Math.max(ps.length - 1, 1), passo = (fim - ini) / n, mov = Math.min(1.3, passo * .45), trechos = [];
+    const n = Math.max(ps.length - 1, 1), passo = (fim - ini) / n, trechos = [];
+    const d1 = Math.min(0.62, passo * 0.24), d2 = Math.min(0.56, passo * 0.22), pausa = 0.1;
     for (let i = 1; i < ps.length; i++) {
-      const t0 = ini + (i - 1) * passo + (passo - mov) * .35;
-      trechos.push({ t0, t1: t0 + mov, de: ps[i - 1], para: ps[i] });
+      const t0 = ini + (i - 1) * passo, meio = ps[i - 1] + (ps[i] - ps[i - 1]) * 0.64;
+      trechos.push({ t0, t1: t0 + d1, de: ps[i - 1], para: meio });
+      trechos.push({ t0: t0 + d1 + pausa, t1: t0 + d1 + pausa + d2, de: meio, para: ps[i], fimSecao: true });
     }
     return trechos;
   }
@@ -166,26 +189,100 @@ JS_ANIMACAO = r"""
     let y = R.paradas[0] || 0;
     for (const r of R.trechos) {
       if (t >= r.t1) y = r.para;
-      else if (t > r.t0) return r.de + (r.para - r.de) * suave((t - r.t0) / (r.t1 - r.t0));
+      else if (t > r.t0) return r.de + (r.para - r.de) * saida4((t - r.t0) / (r.t1 - r.t0));
       else break;
     }
     return y;
   }
+  function rolandoEm(t) { return R.trechos.some((r) => t > r.t0 - 0.05 && t < r.t1 + 0.05); }
+
+  // Cursor do mouse: em cada parada vai até um botão ou cartão e fica "em cima" dele.
+  function planejarCursor(ini, fim) {
+    const vh = innerHeight, menu = alturaMenu();
+    const seletor = ".botao, .card, .linha-preco, .vidro-card, .flutuante, .numeros > div, .numeros-luxo > div, .galeria .g, .lista li, .pontos span";
+    const todos = [...document.querySelectorAll(seletor)].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { el, x: r.left, y: r.top + scrollY, w: r.width, h: r.height, botao: el.classList.contains("botao") };
+    }).filter((a) => a.w > 20 && a.h > 16 && a.w < innerWidth * 0.9);
+    const segs = [{ ini: R.inicio + 0.75, fim: R.trechos[0] ? R.trechos[0].t0 : fim, y: R.paradas[0] }];
+    R.trechos.forEach((r, i) => {
+      if (!r.fimSecao) return;
+      const prox = R.trechos[i + 1];
+      segs.push({ ini: r.t1 + 0.05, fim: prox ? prox.t0 : fim, y: r.para });
+    });
+    let x = innerWidth * 0.72, y = vh * 0.78, usados = new Set();
+    R.movs = [];
+    segs.forEach((sg, n) => {
+      const visiveis = todos.filter((a) => a.y - sg.y > menu + 10 && a.y + a.h - sg.y < vh - 20 && !usados.has(a.el));
+      if (!visiveis.length) return;
+      const ultima = n === segs.length - 1;
+      visiveis.sort((a, b) => (b.botao - a.botao) * (ultima || n === 0 ? 1 : -0.3) || a.y - b.y || a.x - b.x);
+      const dur = sg.fim - sg.ini, qtd = dur > 2.3 && visiveis.length > 1 && !ultima ? 2 : 1;
+      for (let k = 0; k < qtd; k++) {
+        const a = visiveis[k === 0 ? 0 : Math.min(visiveis.length - 1, 1 + ((n * 3) % (visiveis.length - 1 || 1)))];
+        usados.add(a.el);
+        const t0 = sg.ini + k * dur / qtd, t1 = t0 + Math.min(0.7, dur / qtd * 0.45);
+        const nx = a.x + a.w * (a.botao ? 0.62 : 0.55), ny = a.y - sg.y + a.h * (a.botao ? 0.6 : 0.45);
+        R.movs.push({ t0, t1, x0: x, y0: y, x1: nx, y1: ny, el: a.el, fimHover: k + 1 < qtd ? sg.ini + (k + 1) * dur / qtd : sg.fim });
+        x = nx; y = ny;
+      }
+      if (ultima) {
+        const m = R.movs[R.movs.length - 1];
+        if (m) R.clique = { t: m.t1 + 0.35, x: m.x1, y: m.y1 };
+      }
+    });
+  }
+  function cursorEm(t) {
+    let pos = R.movs.length ? [R.movs[0].x0, R.movs[0].y0] : [innerWidth * 0.72, innerHeight * 0.78];
+    for (const m of R.movs) {
+      if (t >= m.t1) pos = [m.x1, m.y1];
+      else if (t > m.t0) {
+        const k = suave((t - m.t0) / (m.t1 - m.t0)), curva = Math.sin(Math.PI * k) * 0.12;
+        const dx = m.x1 - m.x0, dy = m.y1 - m.y0;
+        return [m.x0 + dx * k - dy * curva, m.y0 + dy * k + dx * curva];
+      } else break;
+    }
+    return pos;
+  }
+
   window.prepararSite = function (op) {
     op = op || {};
-    R.inicio = op.inicio ?? 1.55;
-    R.paradas = paradas();
-    R.trechos = montarRolagem(R.paradas, op.inicioRolagem ?? 4.6, op.fim ?? 25.4);
+    R.inicio = op.inicio ?? 1.1;
+    const ini = op.inicioRolagem ?? 3.0, fim = op.fim ?? 16.4;
+    R.paradas = paradas(Math.max(3, Math.round((fim - ini) / 2.6) + 1));
+    R.trechos = montarRolagem(R.paradas, ini, fim);
     const vh = innerHeight;
     const quando = (topo) => {               // instante em que o elemento entra na tela
       if (topo < vh * 0.9) return R.inicio;
-      for (let t = 0; t < 60; t += 1 / 30) if (rolagemEm(t) + vh * 0.86 > topo) return t + 0.05;
+      for (let t = 0; t < 60; t += 1 / 30) if (rolagemEm(t) + vh * 0.88 > topo) return t + 0.02;
       return 99;
     };
     const topo = (el) => el.getBoundingClientRect().top + scrollY;
-    for (const el of document.querySelectorAll("[data-revela]"))
-      R.revela.push({ el, tipo: el.dataset.revela, t0: quando(topo(el)) + (+el.dataset.atraso || 0),
-                      dur: +el.dataset.dur || (el.dataset.revela === "linha" ? 0.8 : 0.9) });
+    for (const el of document.querySelectorAll('[data-revela]:not([data-revela="palavras"])'))
+      R.revela.push({ el, tipo: el.dataset.revela, t0: quando(topo(el)) + (+el.dataset.atraso || 0) * 0.8,
+                      dur: +el.dataset.dur || (el.dataset.revela === "linha" ? 0.7 : 0.75) });
+    // títulos que aparecem palavra por palavra
+    for (const el of document.querySelectorAll('[data-revela="palavras"]')) {
+      const andar = (no) => {
+        for (const filho of [...no.childNodes]) {
+          if (filho.nodeType === 3) {
+            const frag = document.createDocumentFragment();
+            for (const parte of filho.textContent.split(/(\s+)/)) {
+              if (!parte) continue;
+              if (/^\s+$/.test(parte)) { frag.append(parte); continue; }
+              frag.append(Object.assign(document.createElement("span"), { className: "palavra", textContent: parte }));
+            }
+            filho.replaceWith(frag);
+          } else if (filho.nodeType === 1) andar(filho);
+        }
+      };
+      andar(el);
+      const t0 = quando(topo(el)) + (+el.dataset.atraso || 0) * 0.8;
+      [...el.querySelectorAll(".palavra")].forEach((w, i) => R.palavras.push({ el: w, t0: t0 + i * 0.07 }));
+    }
+    for (const el of document.querySelectorAll("[data-paralaxe]")) R.paralaxe.push({ el, pai: el.parentElement });
+    R.barra = Object.assign(document.createElement("div"), { id: "progresso-clover" });
+    document.body.append(R.barra);
     for (const el of document.querySelectorAll("[data-gira]")) R.gira.push({ el, v: +el.dataset.gira || 20 });
     let fase = 0;
     for (const el of document.querySelectorAll("[data-flutua]")) R.flutua.push({ el, a: +el.dataset.flutua || 10, f: (fase += 2.1) });
@@ -193,9 +290,16 @@ JS_ANIMACAO = r"""
     for (const el of document.querySelectorAll("[data-kenburns]")) R.kb.push(el);
     for (const el of document.querySelectorAll("[data-conta]")) {
       const m = el.dataset.conta.match(/^([^\d]*)([\d.,]+)(.*)$/);
-      if (m) R.conta.push({ el, t0: quando(topo(el)) + 0.2, m });
+      if (m) R.conta.push({ el, t0: quando(topo(el)) + 0.15, m });
     }
-    return { paradas: R.paradas, altura: document.documentElement.scrollHeight, trechos: R.trechos.length };
+    if (op.cursor !== false) {
+      planejarCursor(ini, fim);
+      R.cursor = Object.assign(document.createElement("div"), { id: "cursor-clover" });
+      R.cursor.innerHTML = '<svg viewBox="0 0 28 28" width="54" height="54"><path d="M6 3.5v19.2l4.6-4.3 2.9 6.6 3.4-1.5-2.9-6.5h6.3z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      R.anel = Object.assign(document.createElement("div"), { id: "clique-clover" });
+      document.body.append(R.anel, R.cursor);
+    }
+    return { paradas: R.paradas, altura: document.documentElement.scrollHeight, trechos: R.trechos.length, cursor: R.movs.length };
   };
   window.quadroSite = function (t) {
     window.scrollTo(0, rolagemEm(t));
@@ -206,17 +310,53 @@ JS_ANIMACAO = r"""
       else if (r.tipo === "imagem") s.clipPath = `inset(${(1 - p) * 100}% 0 0 0 round var(--raio))`;
       else if (r.tipo === "esquerda") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * -70}px)`; }
       else if (r.tipo === "direita") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * 70}px)`; }
+      else if (r.tipo === "3d") { s.opacity = clamp(k * 1.6); s.transform = `perspective(900px) rotateX(${(1 - p) * 16}deg) translateY(${(1 - p) * 70}px) scale(${0.94 + 0.06 * p})`; }
       else { s.opacity = clamp(k * 1.5); s.transform = `translateY(${(1 - p) * 46}px)`; }
     }
+    for (const w of R.palavras) {
+      const k = (t - w.t0) / 0.6, p = saida(k);
+      w.el.style.opacity = clamp(k * 2);
+      w.el.style.transform = `translateY(${(1 - p) * 0.55}em) rotate(${(1 - p) * 4}deg)`;
+      w.el.style.filter = p < 1 ? `blur(${(1 - p) * 6}px)` : "";
+    }
+    const y = scrollY, vh = innerHeight, max = Math.max(document.documentElement.scrollHeight - vh, 1);
+    for (const px of R.paralaxe) {          // fotos andam mais devagar que a página (profundidade)
+      const r = px.pai.getBoundingClientRect();
+      const desvio = (r.top + r.height / 2 - vh / 2) / vh;
+      px.el.style.translate = `0 ${clamp(desvio, -1.2, 1.2) * r.height * -0.075}px`;
+    }
+    if (R.barra) R.barra.style.transform = `scaleX(${y / max})`;
+    document.documentElement.style.setProperty("--brilho", `${-160 + ((t * 140) % 420)}%`);
     for (const g of R.gira) g.el.style.transform = `rotate(${t * g.v}deg)`;
     for (const f of R.flutua) f.el.style.transform = `translateY(${Math.sin(t * 1.6 + f.f) * f.a}px)`;
     for (const l of R.letreiro) l.el.style.transform = `translateX(${-((t * l.v) % l.w)}px)`;
-    for (const el of R.kb) el.style.transform = `scale(${1.12 - 0.12 * saida(t / 12)})`;
+    for (const el of R.kb) el.style.transform = `scale(${1.12 - 0.12 * saida(t / 9)})`;
     for (const c of R.conta) {
       const alvo = parseFloat(c.m[2].replace(/\./g, "").replace(",", "."));
       const casas = (c.m[2].split(",")[1] || "").length;
-      const v = alvo * saida((t - c.t0) / 1.4);
+      const v = alvo * saida((t - c.t0) / 1.2);
       c.el.textContent = c.m[1] + v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + c.m[3];
+    }
+    if (R.cursor) {
+      const [x, y] = cursorEm(t);
+      const aparece = clamp((t - R.inicio - 0.2) / 0.3);
+      let aperta = 1;
+      if (R.clique) {
+        const dc = t - R.clique.t;
+        if (dc > 0 && dc < 0.22) aperta = 0.84;
+        const ka = clamp(dc / 0.55);
+        R.anel.style.opacity = dc > 0 ? (1 - ka) * 0.9 : 0;
+        R.anel.style.transform = `translate(${R.clique.x}px, ${R.clique.y}px) scale(${0.2 + ka * 0.9})`;
+      }
+      R.cursor.style.opacity = aparece;
+      R.cursor.style.transform = `translate(${x - 12}px, ${y - 7}px) scale(${aperta})`;
+      for (const m of R.movs) {             // "hover": o botão ou cartão sobe e brilha com o cursor em cima
+        const h = rolandoEm(t) && t > m.t1 ? 0 : clamp((t - m.t1 + 0.12) / 0.2) * (1 - clamp((t - m.fimHover + 0.05) / 0.2));
+        m.el.style.translate = h ? `0 ${-5 * h}px` : "";
+        m.el.style.scale = h ? `${1 + 0.035 * h}` : "";
+        m.el.style.filter = h ? `brightness(${1 + 0.1 * h})` : "";
+        if (m.el.classList.contains("botao")) m.el.style.boxShadow = h ? `0 ${12 * h}px ${28 * h}px -10px color-mix(in srgb, var(--destaque) 80%, transparent)` : "";
+      }
     }
     return true;
   };
@@ -332,11 +472,11 @@ CSS_EDITORIAL = """
 def _editorial(s: dict, img: dict) -> str:
     itens = s["itens"][:4]
     cards = "".join(
-        f'<article class="card" data-revela="sobe" data-atraso="{i * 0.12:.2f}">'
-        f'<div class="foto">{_img(img, f"item{i}", alt=it["nome"])}</div>'
+        f'<article class="card" data-revela="3d" data-atraso="{i * 0.14:.2f}">'
+        f'<div class="foto">{_img(img, f"item{i}", alt=it["nome"], extra="data-paralaxe")}</div>'
         f'<div class="corpo"><h3>{_e(it["nome"])}</h3><p>{_e(it["texto"])}</p>'
         f'<span class="preco">{_e(it.get("preco", ""))}</span></div></article>' for i, it in enumerate(itens))
-    numeros = "".join(f'<div data-revela="sobe" data-atraso="{i * 0.1:.2f}"><div class="num" data-conta="{_e(n["valor"])}">{_e(n["valor"])}</div>'
+    numeros = "".join(f'<div data-revela="3d" data-atraso="{i * 0.1:.2f}"><div class="num" data-conta="{_e(n["valor"])}">{_e(n["valor"])}</div>'
                       f'<p>{_e(n["rotulo"])}</p></div>' for i, n in enumerate(s["numeros"][:4]))
     lista = "".join(f'<li data-revela="esquerda" data-atraso="{0.3 + i * 0.1:.2f}"><i>{_icone("check")}</i>{_e(x)}</li>'
                     for i, x in enumerate(s["sobre"].get("pontos", [])[:3]))
@@ -362,21 +502,21 @@ def _editorial(s: dict, img: dict) -> str:
 <div class="letreiro"><div data-letreiro="70">{letreiro}</div></div>
 <section class="servicos" data-parada="0" style="--n:{len(itens)}">
   <div class="cabeca"><div><p class="eyebrow" data-revela="sobe">{_e(s["secao_itens"]["selo"])}</p>
-    <h2 data-revela="sobe" data-atraso=".1">{_rico(s["secao_itens"]["titulo"])}</h2></div>
+    <h2 data-revela="palavras" data-atraso=".1">{_rico(s["secao_itens"]["titulo"])}</h2></div>
     <p class="lado" data-revela="sobe" data-atraso=".2">{_e(s["secao_itens"].get("texto", ""))}</p></div>
   <div class="grade">{cards}</div>
 </section>
 <section class="numeros" data-parada="180">{numeros}</section>
 <section class="sobre" data-parada="0">
-  <div class="colagem"><div class="a" data-revela="imagem">{_img(img, "sobre0", alt=s["marca"])}</div>
+  <div class="colagem"><div class="a" data-revela="imagem">{_img(img, "sobre0", alt=s["marca"], extra="data-paralaxe")}</div>
     <div class="b" data-revela="zoom" data-atraso=".25">{_img(img, "sobre1", alt=s["marca"])}</div></div>
   <div><p class="eyebrow" data-revela="sobe">{_e(s["sobre"]["selo"])}</p>
-    <h2 data-revela="sobe" data-atraso=".1">{_rico(s["sobre"]["titulo"])}</h2>
+    <h2 data-revela="palavras" data-atraso=".1">{_rico(s["sobre"]["titulo"])}</h2>
     <p data-revela="sobe" data-atraso=".2">{_e(s["sobre"]["texto"])}</p><ul class="lista">{lista}</ul></div>
 </section>
 <section class="depoimento" data-parada="0">
   <div data-revela="sobe">{_estrelas()}</div>
-  <blockquote data-revela="sobe" data-atraso=".1">“{_e(s["depoimento"]["texto"])}”</blockquote>
+  <blockquote data-revela="palavras" data-atraso=".1">“{_e(s["depoimento"]["texto"])}”</blockquote>
   <cite data-revela="sobe" data-atraso=".25">{_e(s["depoimento"]["autor"])}</cite>
 </section>
 <section class="cta" data-parada="0">
@@ -441,10 +581,10 @@ CSS_LUXO = """
 def _luxo(s: dict, img: dict) -> str:
     h = s["hero"]
     linhas = "".join(
-        f'<div class="linha-preco" data-revela="sobe" data-atraso="{i * 0.12:.2f}"><div class="foto">{_img(img, f"item{i}", alt=it["nome"])}</div>'
+        f'<div class="linha-preco" data-revela="esquerda" data-atraso="{i * 0.14:.2f}"><div class="foto">{_img(img, f"item{i}", alt=it["nome"], extra="data-paralaxe")}</div>'
         f'<div><h3>{_e(it["nome"])}</h3><p>{_e(it["texto"])}</p></div><span class="preco">{_e(it.get("preco", ""))}</span></div>'
         for i, it in enumerate(s["itens"][:3]))
-    numeros = "".join(f'<div data-revela="sobe" data-atraso="{i * 0.1:.2f}"><div class="num" data-conta="{_e(n["valor"])}">{_e(n["valor"])}</div>'
+    numeros = "".join(f'<div data-revela="3d" data-atraso="{i * 0.1:.2f}"><div class="num" data-conta="{_e(n["valor"])}">{_e(n["valor"])}</div>'
                       f'<p>{_e(n["rotulo"])}</p></div>' for i, n in enumerate(s["numeros"][:4]))
     pontos = "".join(f'<span data-revela="sobe" data-atraso="{0.3 + i * 0.1:.2f}">{_icone("check")}{_e(x)}</span>'
                      for i, x in enumerate(s["sobre"].get("pontos", [])[:3]))
@@ -465,28 +605,28 @@ def _luxo(s: dict, img: dict) -> str:
 <div class="letreiro"><div data-letreiro="70">{letreiro}</div></div>
 <section class="intro" data-parada="0">
   <p class="eyebrow" data-revela="sobe">{_e(s["sobre"]["selo"])}</p>
-  <h2 data-revela="sobe" data-atraso=".1">{_rico(s["sobre"]["titulo"])}</h2>
+  <h2 data-revela="palavras" data-atraso=".1">{_rico(s["sobre"]["titulo"])}</h2>
   <p data-revela="sobe" data-atraso=".2">{_e(s["sobre"]["texto"])}</p>
   <div class="pontos">{pontos}</div>
 </section>
 <section class="menu-precos" data-parada="0">
   <p class="eyebrow" data-revela="sobe">{_e(s["secao_itens"]["selo"])}</p>
-  <h2 data-revela="sobe" data-atraso=".1">{_rico(s["secao_itens"]["titulo"])}</h2>
+  <h2 data-revela="palavras" data-atraso=".1">{_rico(s["secao_itens"]["titulo"])}</h2>
   {linhas}
 </section>
 <section class="numeros-luxo" data-parada="200">{numeros}</section>
 <section class="galeria" data-parada="0">
-  <div class="g" data-revela="imagem">{_img(img, "sobre0", alt=s["marca"])}<span class="rotulo">{_e(s["palavras"][0] if s["palavras"] else s["marca"])}</span></div>
-  <div class="g" data-revela="imagem" data-atraso=".15">{_img(img, "sobre1", alt=s["marca"])}<span class="rotulo">{_e(s.get("cidade", ""))}</span></div>
+  <div class="g" data-revela="imagem">{_img(img, "sobre0", alt=s["marca"], extra="data-paralaxe")}<span class="rotulo">{_e(s["palavras"][0] if s["palavras"] else s["marca"])}</span></div>
+  <div class="g" data-revela="imagem" data-atraso=".15">{_img(img, "sobre1", alt=s["marca"], extra="data-paralaxe")}<span class="rotulo">{_e(s.get("cidade", ""))}</span></div>
 </section>
 <section class="depo-luxo" data-parada="0">
   <div class="aspas" data-revela="zoom">“</div>
-  <blockquote data-revela="sobe" data-atraso=".1">{_e(s["depoimento"]["texto"])}</blockquote>
+  <blockquote data-revela="palavras" data-atraso=".1">{_e(s["depoimento"]["texto"])}</blockquote>
   <cite data-revela="sobe" data-atraso=".25">{_estrelas()} · {_e(s["depoimento"]["autor"])}</cite>
 </section>
 <section class="cta-luxo" data-parada="60">
-  <div class="fundo-foto">{_img(img, "hero", alt=s["marca"])}</div>
-  <div class="conteudo"><h2 data-revela="sobe">{_rico(s["cta"]["titulo"])}</h2><p data-revela="sobe" data-atraso=".1">{_e(s["cta"].get("texto", ""))}</p>
+  <div class="fundo-foto">{_img(img, "hero", alt=s["marca"], extra="data-paralaxe")}</div>
+  <div class="conteudo"><h2 data-revela="palavras">{_rico(s["cta"]["titulo"])}</h2><p data-revela="sobe" data-atraso=".1">{_e(s["cta"].get("texto", ""))}</p>
     <a class="botao" data-revela="zoom" data-atraso=".2">{_e(s["cta"].get("botao") or s["botao"])} {_icone("seta")}</a></div>
 </section>"""
 

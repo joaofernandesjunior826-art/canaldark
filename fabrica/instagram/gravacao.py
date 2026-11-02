@@ -22,8 +22,11 @@ LARGURA, ALTURA, FPS = 1080, 1920, 30
 SITE_L, SITE_A = 1280, 800
 CENA = Path(__file__).with_name("cena.html")
 VENDOR = Path(__file__).with_name("vendor")  # three.js (licença MIT), para o notebook 3D
-DURACAO = 30.0          # duração do Reels
-INICIO_FINAL = 26.4     # quando o cartão final começa a aparecer
+DURACAO = 20.0          # duração do Reels
+INICIO_FINAL = 17.0     # quando o cartão final começa a aparecer
+INICIO_SITE = 1.1       # o site aparece junto com "O site:"
+INICIO_ROLAGEM = 3.0    # quando começa a rolar
+FIM_ROLAGEM = 16.4      # última parada antes do cartão final
 TRANSICAO = 0.5         # duração da passagem para o cartão final
 ZOOM_MAXIMO = 0.085     # a câmera aproxima 8,5% ao longo do vídeo
 
@@ -153,8 +156,9 @@ class Estudio:
           await document.fonts.ready;
           await Promise.all([...document.images].map((im) => im.complete ? 0 : new Promise((ok) => { im.onload = im.onerror = ok; })));
         }""")
-        info = pagina.evaluate("() => prepararSite({inicio: 1.1, inicioRolagem: 4.2, fim: 25.2})")
-        print(f"  site com {info['altura']} px e {len(info['paradas'])} paradas")
+        info = pagina.evaluate("op => prepararSite(op)", {"inicio": INICIO_SITE, "inicioRolagem": INICIO_ROLAGEM,
+                                                          "fim": FIM_ROLAGEM})
+        print(f"  site com {info['altura']} px, {len(info['paradas'])} paradas e {info['cursor']} movimentos do mouse")
 
         fim_principal = INICIO_FINAL + TRANSICAO
         n = round(fim_principal * FPS) + 1

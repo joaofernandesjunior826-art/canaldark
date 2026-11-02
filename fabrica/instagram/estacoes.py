@@ -6,7 +6,7 @@ São os mesmos 8 passos do GitHub Actions dos Shorts (o painel mostra ao vivo), 
   3 Narração  aqui vira a trilha: batida lo-fi gerada na hora (sem narração)
   4 Cenas     baixa as fotos e monta o site
   5 Montagem  desenha o notebook 3D e o cartão final da Clover
-  6 Shorts    grava o site rolando na tela e monta o Reels de 30 s
+  6 Shorts    grava o site rolando na tela e monta o Reels de 20 s
   7 Thumbnail capa
   8 Agenda    guarda a prévia e avisa
 """
@@ -19,7 +19,7 @@ from pathlib import Path
 
 from .. import config, estado, github, telegram
 from . import conceito, sites, trilha
-from .gravacao import DURACAO, Estudio
+from .gravacao import DURACAO, INICIO_FINAL, INICIO_SITE, Estudio
 
 MARCA_CLOVER = config.RAIZ / "painel" / "marca.png"
 
@@ -58,7 +58,7 @@ def roteiro(t: dict) -> None:
 
 def narracao(t: dict) -> None:
     arquivo = Path(t["pasta"], "trilha.wav")
-    trilha.gerar(arquivo, DURACAO, semente=_semente(t))
+    trilha.gerar(arquivo, DURACAO, entrada_bateria=INICIO_SITE, fim_bateria=INICIO_FINAL, semente=_semente(t))
     t["trilha"] = str(arquivo)
     print("Trilha lo-fi pronta (gerada na hora, sem direitos autorais).")
 
@@ -107,7 +107,7 @@ def shorts(t: dict) -> None:
 
 def thumbnail(t: dict) -> None:
     capa = Path(t["pasta"], "capa.jpg")
-    subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-ss", "4.2", "-i", t["short"],
+    subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-ss", "2.7", "-i", t["short"],
                     "-frames:v", "1", "-q:v", "3", str(capa)], check=True)
     t["capa"] = str(capa)
 

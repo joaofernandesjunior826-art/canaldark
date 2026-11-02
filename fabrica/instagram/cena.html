@@ -192,7 +192,7 @@ window.configurar = async function (op) {
   const espelho = new Reflector(new THREE.PlaneGeometry(400, 400), { color: new THREE.Color("#2b2833"), textureWidth: 320, textureHeight: 320, clipBias: 0.003 });
   espelho.rotation.x = -Math.PI / 2; espelho.position.y = -0.001;
   scene.add(espelho);
-  const veu = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: "#07060a", transparent: true, opacity: op.veuChao ?? 0.78, depthWrite: false }));
+  const veu = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshBasicMaterial({ color: "#07060a", transparent: true, opacity: op.veuChao ?? 0.86, depthWrite: false }));
   veu.rotation.x = -Math.PI / 2; veu.position.y = 0.005;
   scene.add(veu);
 
