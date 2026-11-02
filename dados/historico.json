@@ -304,7 +304,7 @@
   {
     "id": "20261102-030327",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Adão e Eva e o fruto proibido",
     "referencia": "Gênesis 3",
     "titulo": "O dia em que o pecado entrou no mundo",
@@ -323,12 +323,13 @@
     "postar_em": "2026-11-02T06:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T09:38:23-03:00"
+    "aprovado_em": "2026-11-02T09:38:23-03:00",
+    "publicado_em": "2026-11-02T09:50:36-03:00"
   },
   {
     "id": "20261102-031607",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Sodoma e Gomorra e a mulher de Ló",
     "referencia": "Gênesis 19",
     "titulo": "Por que olhar para trás foi fatal para a mulher de Ló?",
@@ -346,7 +347,8 @@
     "postar_em": "2026-11-02T08:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T09:38:23-03:00"
+    "aprovado_em": "2026-11-02T09:38:23-03:00",
+    "publicado_em": "2026-11-02T09:50:36-03:00"
   },
   {
     "id": "20261102-032158",
