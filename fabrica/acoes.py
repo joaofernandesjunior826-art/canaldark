@@ -35,6 +35,8 @@ def aplicar(e: dict, pedido: dict) -> str:
         tipo = "novo" if video_do_dia_pendente(e) else "extra"
         enfileirar(e, {"tipo": tipo, "tema": tema})
         return f"Vídeo {'sobre ' + tema if tema else 'novo'} na fila."
+    if acao == "continuar":  # a fábrica chamando a si mesma para o próximo pedido da fila
+        return "Seguindo a fila."
     if acao == "teste":
         enfileirar(e, {"tipo": "teste"})
         return "Vídeo de teste na fila."

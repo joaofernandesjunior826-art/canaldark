@@ -17,7 +17,7 @@ async function execucoes(token) {
     const jobs = await ghJson(token, `/repos/${REPO}/actions/runs/${ativa.id}/jobs`);
     const passos = (jobs.jobs && jobs.jobs[0] && jobs.jobs[0].steps) || [];
     etapas = passos
-      .filter((p) => /^\d\s/.test(p.name) || p.name === "Pedidos" || p.name === "Preparar a fábrica")
+      .filter((p) => /^\d\s/.test(p.name) || ["Pedidos", "Preparar a fábrica", "Reels do Instagram"].includes(p.name))
       .map((p) => ({ nome: p.name, status: p.status, conclusao: p.conclusion }));
   }
   return { ativa, etapas, recentes: runs };

@@ -1,6 +1,4 @@
 name: Fábrica de Shorts
-# Nome de cada execução: o painel usa para saber se é um Reels do Instagram ou um Short.
-run-name: ${{ github.event_name == 'workflow_dispatch' && format('GitHub: {0} {1}', inputs.acao, inputs.tema) || '' }}
 
 on:
   schedule:
@@ -16,7 +14,7 @@ on:
       acao:
         description: "O que fazer"
         type: choice
-        options: [produzir, teste, instagram, aprovar, refazer, descartar, publicado]
+        options: [produzir, teste, instagram, aprovar, refazer, descartar, publicado, continuar]
         default: produzir
       id:
         description: "Vídeo (para aprovar, refazer, descartar ou marcar como publicado)"
@@ -33,6 +31,7 @@ on:
 
 permissions:
   contents: write  # guardar o histórico em dados/ e as prévias dos vídeos
+  actions: write   # chamar a fábrica de novo quando ainda há pedidos na fila
   id-token: write  # provar ao painel que é a sua fábrica, para abrir o cofre de chaves
 
 concurrency:
@@ -91,6 +90,11 @@ jobs:
       - name: Pedidos
         id: plano
         run: python -m fabrica planejar
+
+      # Passo só de aviso: o painel vê que este pedido é um Reels e mostra as estações do Reels.
+      - name: Reels do Instagram
+        if: steps.plano.outputs.tipo == 'instagram'
+        run: echo "Este pedido é um Reels do Instagram."
 
       - name: Preparar a fábrica
         if: steps.plano.outputs.producao == 'sim'
@@ -158,3 +162,12 @@ jobs:
             sleep 5
           done
           exit 1
+
+      # Ainda tem vídeo pedido na fila? Chama a fábrica de novo (um vídeo por vez).
+      - name: Próximo da fila
+        if: success() && steps.plano.outputs.producao == 'sim'
+        run: |
+          if [ "$(python -m fabrica fila)" = "sim" ]; then
+            gh workflow run fabrica.yml --ref "${GITHUB_REF_NAME}" -f acao=continuar
+            echo "Ainda há pedidos na fila: a fábrica volta em instantes."
+          fi

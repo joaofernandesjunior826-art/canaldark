@@ -217,7 +217,11 @@ const ehReels = (v) => v.tipo === "instagram";
 function videosCom(...status) { return (app.dados?.videos || []).filter((v) => !ehReels(v) && status.includes(v.status)); }
 function reels() { return (app.dados?.videos || []).filter(ehReels); }
 function rotuloStatus(v) { return (ehReels(v) ? STATUS_REELS[v.status] : STATUS[v.status]) || v.status; }
-function execucaoEhReels(exec) { return /instagram/i.test((exec && exec.ativa && exec.ativa.titulo) || ""); }
+function execucaoEhReels(exec) {
+  if (!exec || !exec.ativa) return false;
+  return /instagram/i.test(exec.ativa.titulo || "") ||
+    (exec.etapas || []).some((e) => e.nome === "Reels do Instagram" && e.conclusao === "success");
+}
 function previa(v) { return app.dados?.previas?.[v.id] || {}; }
 
 function avisar(texto, erro = false) {
@@ -322,6 +326,7 @@ function pgFabrica() {
     const classe = r.status !== "completed" ? "andamento" : r.conclusao === "success" ? "sucesso" : r.conclusao === "cancelled" || r.conclusao === "skipped" ? "" : "falha";
     let origem = { schedule: "Agenda automática", push: "Pedido do painel", workflow_dispatch: "Botão do GitHub" }[r.evento] || r.evento;
     if (/instagram/i.test(r.titulo || "")) origem = "Reels do Instagram";
+    if (r.evento === "workflow_dispatch" && /continuar/i.test(r.titulo || "")) origem = "Próximo da fila";
     const res = r.status !== "completed" ? "em andamento" : r.conclusao === "success" ? "ok" : r.conclusao === "failure" ? "falhou" : r.conclusao;
     return `<a class="lista-item" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="bolinha ${classe}"></span>
       <span class="texto"><b>${esc(origem)}</b><small>${dataCurta(r.inicio)} · ${esc(res)}</small></span>${icone("externo")}</a>`;

@@ -77,6 +77,15 @@ def planejar() -> None:
             f.write(f"producao={'sim' if producao else 'nao'}\npublicar={'sim' if publicar else 'nao'}\ntipo={tipo}\n")
 
 
+def tem_fila() -> bool:
+    """Ainda há vídeo pedido que dá para produzir agora? (mesma regra do planejar)"""
+    e = estado.ler_estado()
+    if estado.falhas_hoje(e) >= config.MAX_FALHAS_POR_DIA:
+        return False
+    return any(t["tipo"] in acoes.TAREFAS_DE_PRODUCAO and
+               (config.GEMINI_API_KEY or t["tipo"] == "teste" or t.get("exemplo")) for t in e["fila"])
+
+
 def teste(tema: str, arquivo_roteiro: str | None) -> None:
     """Sem tema nem roteiro, usa o roteiro de exemplo (não precisa de nenhuma chave)."""
     pronto = json.loads(open(arquivo_roteiro, encoding="utf-8").read()) if arquivo_roteiro else None
@@ -92,7 +101,7 @@ def teste(tema: str, arquivo_roteiro: str | None) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Fábrica de Shorts")
-    p.add_argument("acao", choices=["chaves", "planejar", "etapa", "falha", "teste"])
+    p.add_argument("acao", choices=["chaves", "planejar", "etapa", "falha", "teste", "fila"])
     p.add_argument("nome", nargs="?", help="etapa: nome da estação")
     p.add_argument("--tema", default="", help="teste: tema ou história")
     p.add_argument("--roteiro", help="teste: arquivo JSON com um roteiro pronto")
@@ -108,6 +117,8 @@ def main() -> None:
         etapas.executar_etapa(args.nome)
     elif args.acao == "falha":
         etapas.registrar_falha()
+    elif args.acao == "fila":
+        print("sim" if tem_fila() else "nao")
     else:
         teste(args.tema.strip(), args.roteiro)
 
