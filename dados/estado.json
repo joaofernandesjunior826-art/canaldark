@@ -1,12 +1,5 @@
 {
-  "fila": [
-    {
-      "tipo": "instagram",
-      "tema": "Imobiliária",
-      "ajuste": "",
-      "pedido": "2026-11-02T01:05:47.000Z"
-    }
-  ],
+  "fila": [],
   "falhas": {
     "data": "",
     "n": 0
