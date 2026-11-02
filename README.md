@@ -2,7 +2,7 @@
 
 Uma fábrica que faz sozinha, todo dia, um YouTube Short contando uma história da Bíblia, e um
 **painel** com a marca Clover onde você acompanha a produção ao vivo e aprova cada vídeo.
-Ela também faz **Reels de 20 s para o Instagram da Clover**: um site-conceito criado pela IA,
+Ela também faz **Reels de 15 s para o Instagram da Clover**: um site-conceito criado pela IA,
 rolando na tela de um notebook (veja [Reels da Clover](#reels-da-clover-instagram)).
 Tudo grátis: a fábrica roda nos servidores do GitHub e o painel na Vercel.
 
@@ -106,11 +106,15 @@ No painel, página **Instagram**: escolha um segmento (ou **Surpreenda-me**), es
 quiser (ex.: "tema escuro, cores verde e dourado") e toque em **Criar Reels**. Em uns 5 minutos o
 vídeo aparece em **Prontos para postar**, com a legenda pronta para copiar.
 
-O vídeo (1080x1920, 20 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
+O vídeo (1080x1920, 15 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
 a luz roxa da Clover, o site-conceito rolando na tela e o final com a marca Clover, "Seu site pode ser
 assim", o botão e o @ do Instagram. No site: cursor do mouse passeando e clicando, rolagem como a roda
 do mouse, títulos que aparecem palavra por palavra, cartões em 3D, fotos com paralaxe, contadores,
 brilho nos botões e barra de progresso.
+
+Na maioria dos sites (3 de cada 4) aparece uma **barra lateral de vidro** que o cursor usa: passa nos
+ícones e surge a etiqueta, clica e a página rola até a seção, abre a barra (nomes, contadores), digita
+na busca, abre um submenu, liga o modo noturno (o site inteiro escurece) e fecha a barra.
 
 **6 modelos de site, em rodízio** (um Reels nunca repete o modelo dos últimos): editorial, luxo
 (escuro), impacto (cores fortes e letras gigantes), minimal, revista e neon (tecnológico). Cada um tem a

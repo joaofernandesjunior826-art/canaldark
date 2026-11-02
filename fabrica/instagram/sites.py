@@ -6,7 +6,9 @@ as cores, as fontes e escreve todos os textos. O site tem uma pequena "máquina 
 toda vez (nada depende do relógio do computador).
 """
 import html
+import json
 import re
+import unicodedata
 
 FONTES_TITULO = ["Fraunces", "Playfair Display", "DM Serif Display", "Cormorant Garamond", "Instrument Serif",
                  "Bricolage Grotesque", "Syne", "Outfit", "Sora", "Space Grotesk", "Archivo", "Unbounded"]
@@ -168,7 +170,9 @@ JS_ANIMACAO = r"""
   const suave = (k) => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
   const molinha = (k) => { k = clamp(k); const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
   const R = { revela: [], gira: [], flutua: [], letreiro: [], kb: [], conta: [], trechos: [], paradas: [0], inicio: 1.1,
-              movs: [], alvos: [], clique: null, cursor: null, anel: null, palavras: [], paralaxe: [], barra: null };
+              movs: [], alvos: [], cliques: [], cursor: null, anel: null, palavras: [], paralaxe: [], barra: null,
+              B: null, abre: [], sub: [], noite: [], ativos: [], dicas: [], hovers: [], texto: [], digita: null, cursor0: null,
+              ultimoAtivo: -1, ultimaNoite: -1, ultimaDica: null };
 
   function alturaMenu() {
     const nav = document.querySelector(".nav");
@@ -191,8 +195,8 @@ JS_ANIMACAO = r"""
     const d1 = Math.min(0.62, passo * 0.24), d2 = Math.min(0.56, passo * 0.22), pausa = 0.1;
     for (let i = 1; i < ps.length; i++) {
       const t0 = ini + (i - 1) * passo, meio = ps[i - 1] + (ps[i] - ps[i - 1]) * 0.64;
-      trechos.push({ t0, t1: t0 + d1, de: ps[i - 1], para: meio });
-      trechos.push({ t0: t0 + d1 + pausa, t1: t0 + d1 + pausa + d2, de: meio, para: ps[i], fimSecao: true });
+      trechos.push({ t0, t1: t0 + d1, de: ps[i - 1], para: meio, curva: "roda" });
+      trechos.push({ t0: t0 + d1 + pausa, t1: t0 + d1 + pausa + d2, de: meio, para: ps[i], fimSecao: true, curva: "roda" });
     }
     return trechos;
   }
@@ -200,10 +204,31 @@ JS_ANIMACAO = r"""
     let y = R.paradas[0] || 0;
     for (const r of R.trechos) {
       if (t >= r.t1) y = r.para;
-      else if (t > r.t0) return r.de + (r.para - r.de) * saida4((t - r.t0) / (r.t1 - r.t0));
+      else if (t > r.t0) return r.de + (r.para - r.de) * (r.curva === "suave" ? suave : saida4)((t - r.t0) / (r.t1 - r.t0));
       else break;
     }
     return y;
+  }
+  function valorEm(lista, t, v0) {          // linha do tempo de um valor (0 a 1) com transições suaves
+    let v = v0;
+    for (const s of lista) {
+      if (t >= s.t1) v = s.para;
+      else if (t > s.t0) return s.de + (s.para - s.de) * suave((t - s.t0) / (s.t1 - s.t0));
+      else break;
+    }
+    return v;
+  }
+  function janela(lista, t, sobe = 0.12, desce = 0.15) {  // intensidade (0 a 1) dentro de janelas de tempo
+    let h = 0;
+    for (const j of lista) h = Math.max(h, clamp((t - j.t0) / sobe) * (1 - clamp((t - j.t1) / desce)));
+    return h;
+  }
+  function alvosDaPagina() {
+    const seletor = ".alvo, .botao, .card, .linha-preco, .vidro-card, .flutuante, .numeros > div, .numeros-luxo > div, .galeria .g, .lista li, .pontos span";
+    return [...document.querySelectorAll(seletor)].filter((el) => !el.closest(".nav, .barra-v")).map((el) => {
+      const r = el.getBoundingClientRect();
+      return { el, x: r.left, y: r.top + scrollY, w: r.width, h: r.height, botao: el.classList.contains("botao") };
+    }).filter((a) => a.w > 20 && a.h > 16 && a.w < innerWidth * 0.9);
   }
   function rolandoEm(t) { return R.trechos.some((r) => t > r.t0 - 0.05 && t < r.t1 + 0.05); }
 
@@ -239,12 +264,147 @@ JS_ANIMACAO = r"""
       }
       if (ultima) {
         const m = R.movs[R.movs.length - 1];
-        if (m) R.clique = { t: m.t1 + 0.35, x: m.x1, y: m.y1 };
+        if (m) R.cliques.push({ t: m.t1 + 0.35, x: m.x1, y: m.y1 });
       }
     });
   }
+  // ---- barra lateral de vidro: o cursor usa ela de verdade ----
+  function medirBarra(b) {
+    const B = { el: b, itens: [...b.querySelectorAll(".bv-item")], subs: [...b.querySelectorAll(".bv-sub a")],
+                seta: b.querySelector(".bv-seta"), busca: b.querySelector(".bv-busca"), noite: b.querySelector(".bv-noite"),
+                digitado: b.querySelector(".digitado"), ph: b.querySelector(".ph"), caret: b.querySelector(".caret"),
+                dica: document.querySelector(".bv-dica") };
+    const centro = (el, fx = 0.5) => { const r = el.getBoundingClientRect(); return [r.left + r.width * fx, r.top + r.height / 2]; };
+    const icone = (el) => centro(el.querySelector("svg") || el);
+    b.style.setProperty("--abre", 0); b.style.setProperty("--sub", 0);
+    B.fechada = { itens: B.itens.map(icone), seta: centro(B.seta), noite: icone(B.noite), direita: b.getBoundingClientRect().right };
+    b.style.setProperty("--abre", 1); b.style.setProperty("--sub", 1);
+    B.aberta = { itens: B.itens.map((el) => centro(el, 0.35)), subs: B.subs.map((el) => centro(el, 0.4)), seta: centro(B.seta),
+                 busca: centro(B.busca, 0.42) };
+    b.style.setProperty("--abre", 0); b.style.setProperty("--sub", 0);
+    return B;
+  }
+  function planejarComBarra(ini, fim) {
+    const B = R.B, P = R.paradas, N = P.length - 1, vh = innerHeight, menu = alturaMenu();
+    const temTema = !!(window.TEMAS && window.TEMAS.para);
+    const passos = [{ tipo: "heroi", y: P[0] }];
+    for (let k = 1; k <= N; k++) {
+      passos.push({ tipo: k % 2 ? "clique" : "roda", de: P[k - 1], para: P[k], k });
+      passos.push({ tipo: k === N ? "final" : k === 1 ? "expandir" : (k === 2 && temTema) ? "tema" : "hover", y: P[k] });
+    }
+    const base = { heroi: 1.2, clique: 1.6, roda: 1.1, hover: 0.95, expandir: 2.9, tema: 1.3, final: 1.1 };
+    const t0 = R.inicio + 0.25, soma = passos.reduce((a, p) => a + base[p.tipo], 0);
+    const f = Math.min(1.25, (fim - t0) / soma);
+    let t = t0, x = innerWidth * 0.66, y = vh * 0.8, ativo = 0;
+    R.cursor0 = [x, y];
+    const usados = new Set(), todos = alvosDaPagina();
+    const mover = (a, b, nx, ny, el = null, fimHover = null) => { R.movs.push({ t0: a, t1: b, x0: x, y0: y, x1: nx, y1: ny, el, fimHover: fimHover ?? b }); x = nx; y = ny; };
+    const clicar = (tc) => R.cliques.push({ t: tc, x, y });
+    const alvoPagina = (yRol, botao) => {
+      const vis = todos.filter((a) => a.y - yRol > menu + 10 && a.y + a.h - yRol < vh - 20 && !usados.has(a.el));
+      if (!vis.length) return null;
+      vis.sort((a, b) => (b.botao - a.botao) * (botao ? 1 : -1) || a.y - b.y || a.x - b.x);
+      const a = vis[0]; usados.add(a.el);
+      return { x: a.x + a.w * (a.botao ? 0.62 : 0.55), y: a.y - yRol + a.h * (a.botao ? 0.6 : 0.45), el: a.el };
+    };
+    for (const p of passos) {
+      const d = base[p.tipo] * f, em = (k) => t + k * d;
+      if (p.tipo === "heroi" || p.tipo === "hover" || p.tipo === "final") {
+        const a = alvoPagina(p.y, p.tipo !== "hover");
+        if (a) { mover(em(0.05), em(0.48), a.x, a.y, a.el, em(1)); if (p.tipo === "final") clicar(em(0.72)); }
+      } else if (p.tipo === "clique") {             // clica no ícone da barra e a página rola até a seção
+        const idx = Math.min(p.k, B.itens.length - 1);
+        mover(em(0), em(0.3), ...B.fechada.itens[idx]);
+        R.hovers.push({ el: B.itens[idx], t0: em(0.28), t1: em(0.6) });
+        R.dicas.push({ alvo: B.itens[idx], t0: em(0.28), t1: em(0.6) });
+        clicar(em(0.48)); R.ativos.push({ t: em(0.48), idx }); ativo = idx;
+        R.trechos.push({ t0: em(0.5), t1: em(1), de: p.de, para: p.para, curva: "suave" });
+      } else if (p.tipo === "roda") {               // volta para a página e rola com a roda do mouse
+        mover(em(0), em(0.25), innerWidth * 0.6, vh * 0.58);
+        const meio = p.de + (p.para - p.de) * 0.64;
+        R.trechos.push({ t0: em(0.22), t1: em(0.6), de: p.de, para: meio, curva: "roda" });
+        R.trechos.push({ t0: em(0.64), t1: em(1), de: meio, para: p.para, curva: "roda", fimSecao: true });
+      } else if (p.tipo === "expandir") {           // abre a barra, busca, abre um submenu e fecha
+        mover(em(0), em(0.1), ...B.fechada.seta);
+        R.hovers.push({ el: B.seta, t0: em(0.08), t1: em(0.14) });
+        clicar(em(0.12));
+        R.abre.push({ t0: em(0.12), t1: em(0.22), de: 0, para: 1 });
+        mover(em(0.23), em(0.32), ...B.aberta.busca);
+        R.texto.push({ t0: em(0.29), t1: em(0.52) });
+        clicar(em(0.33));
+        R.digita = { t0: em(0.35), t1: em(0.5), ate: em(0.9) };
+        mover(em(0.53), em(0.61), ...B.aberta.itens[1]);
+        R.hovers.push({ el: B.itens[1], t0: em(0.6), t1: em(0.67) });
+        clicar(em(0.63)); R.ativos.push({ t: em(0.63), idx: 1 });
+        R.sub.push({ t0: em(0.63), t1: em(0.72), de: 0, para: 1 });
+        if (B.aberta.subs.length) {
+          mover(em(0.67), em(0.75), ...B.aberta.subs[0]);
+          R.hovers.push({ el: B.subs[0], t0: em(0.74), t1: em(0.82) });
+        }
+        mover(em(0.82), em(0.9), ...B.aberta.seta);
+        R.hovers.push({ el: B.seta, t0: em(0.88), t1: em(0.93) });
+        clicar(em(0.91));
+        R.abre.push({ t0: em(0.91), t1: em(1), de: 1, para: 0 });
+        R.sub.push({ t0: em(0.91), t1: em(0.97), de: 1, para: 0 });
+        R.ativos.push({ t: em(0.95), idx: ativo });
+      } else if (p.tipo === "tema") {               // liga o modo noturno: o site inteiro escurece
+        mover(em(0), em(0.3), ...B.fechada.noite);
+        R.hovers.push({ el: B.noite, t0: em(0.28), t1: em(0.62) });
+        R.dicas.push({ alvo: B.noite, t0: em(0.28), t1: em(0.62) });
+        clicar(em(0.5));
+        R.noite.push({ t0: em(0.5), t1: em(0.8), de: 0, para: 1 });
+        mover(em(0.7), em(1), innerWidth * 0.6, vh * 0.55);
+      }
+      t += d;
+    }
+    R.trechos.sort((a, b) => a.t0 - b.t0);
+  }
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const misturaCor = (a, b, k) => "#" + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * k).toString(16).padStart(2, "0")).join("");
+  function aplicarTema(k) {
+    const T = window.TEMAS;
+    if (!T || !T.para || Math.abs(k - R.ultimaNoite) < 0.002) return;
+    R.ultimaNoite = k;
+    for (const nome of Object.keys(T.de)) document.documentElement.style.setProperty(`--${nome}`, misturaCor(T.de[nome], T.para[nome], k));
+  }
+  function quadroBarra(t) {
+    const B = R.B;
+    B.el.style.setProperty("--abre", valorEm(R.abre, t, 0).toFixed(4));
+    B.el.style.setProperty("--sub", valorEm(R.sub, t, 0).toFixed(4));
+    const noite = valorEm(R.noite, t, 0);
+    B.el.style.setProperty("--noite", noite.toFixed(4));
+    aplicarTema(noite);
+    let idx = 0;
+    for (const a of R.ativos) if (t >= a.t) idx = a.idx;
+    if (idx !== R.ultimoAtivo) { B.itens.forEach((el, i) => el.classList.toggle("ativo", i === idx)); R.ultimoAtivo = idx; }
+    const alvosHover = new Set(R.hovers.map((h) => h.el));
+    for (const el of alvosHover) el.style.setProperty("--h", janela(R.hovers.filter((h) => h.el === el), t, 0.1, 0.12).toFixed(3));
+    let dica = null, forca = 0;
+    for (const d of R.dicas) { const k = janela([d], t, 0.12, 0.12); if (k > forca) { forca = k; dica = d; } }
+    if (B.dica) {
+      B.dica.style.opacity = forca;
+      if (dica) {
+        if (R.ultimaDica !== dica.alvo) {
+          const rot = dica.alvo.querySelector(".rot"), cont = dica.alvo.querySelector(".bv-cont");
+          B.dica.innerHTML = (rot ? rot.textContent : "") + (cont ? `<i>${cont.textContent}</i>` : "");
+          R.ultimaDica = dica.alvo;
+        }
+        const r = (dica.alvo.querySelector("svg") || dica.alvo).getBoundingClientRect();
+        B.dica.style.transform = `translate(${B.fechada.direita + 16}px, ${r.top + r.height / 2}px) translateY(-50%) scale(${0.88 + 0.12 * forca})`;
+      }
+    }
+    if (R.digita && B.digitado) {
+      const D = R.digita, txt = B.digitado.dataset.texto || "";
+      const n = t < D.t0 ? 0 : t >= D.ate ? 0 : Math.round(txt.length * clamp((t - D.t0) / (D.t1 - D.t0)));
+      B.digitado.textContent = txt.slice(0, n);
+      B.ph.style.opacity = n ? 0 : 1;
+      const foco = t > D.t0 - 0.12 && t < D.ate;
+      B.caret.style.opacity = foco && Math.floor(t * 2.6) % 2 === 0 ? 1 : foco && t < D.t1 ? 1 : 0;
+    }
+  }
+
   function cursorEm(t) {
-    let pos = R.movs.length ? [R.movs[0].x0, R.movs[0].y0] : [innerWidth * 0.72, innerHeight * 0.78];
+    let pos = R.movs.length ? [R.movs[0].x0, R.movs[0].y0] : (R.cursor0 || [innerWidth * 0.72, innerHeight * 0.78]);
     for (const m of R.movs) {
       if (t >= m.t1) pos = [m.x1, m.y1];
       else if (t > m.t0) {
@@ -258,10 +418,12 @@ JS_ANIMACAO = r"""
 
   window.prepararSite = function (op) {
     op = op || {};
-    R.inicio = op.inicio ?? 1.1;
-    const ini = op.inicioRolagem ?? 3.0, fim = op.fim ?? 16.4;
-    R.paradas = paradas(Math.max(3, Math.round((fim - ini) / 2.6) + 1));
-    R.trechos = montarRolagem(R.paradas, ini, fim);
+    R.inicio = op.inicio ?? 1.0;
+    const ini = op.inicioRolagem ?? 2.4, fim = op.fim ?? 12.0;
+    const barra = document.querySelector(".barra-v");
+    R.paradas = paradas(barra ? 5 : Math.max(3, Math.round((fim - ini) / 2.4) + 1));
+    if (barra) { R.B = medirBarra(barra); planejarComBarra(ini, fim); }
+    else R.trechos = montarRolagem(R.paradas, ini, fim);
     const vh = innerHeight;
     const quando = (topo) => {               // instante em que o elemento entra na tela
       if (topo < vh * 0.9) return R.inicio;
@@ -304,13 +466,14 @@ JS_ANIMACAO = r"""
       if (m) R.conta.push({ el, t0: quando(topo(el)) + 0.15, m });
     }
     if (op.cursor !== false) {
-      planejarCursor(ini, fim);
+      if (!barra) planejarCursor(ini, fim);
       R.cursor = Object.assign(document.createElement("div"), { id: "cursor-clover" });
-      R.cursor.innerHTML = '<svg viewBox="0 0 28 28" width="54" height="54"><path d="M6 3.5v19.2l4.6-4.3 2.9 6.6 3.4-1.5-2.9-6.5h6.3z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      R.cursor.innerHTML = '<svg class="seta-c" viewBox="0 0 28 28" width="54" height="54"><path d="M6 3.5v19.2l4.6-4.3 2.9 6.6 3.4-1.5-2.9-6.5h6.3z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>' +
+        '<svg class="texto-c" viewBox="0 0 28 28" width="54" height="54" style="display:none"><path d="M10 4.5h8M10 23.5h8M14 4.5v19" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/><path d="M10 4.5h8M10 23.5h8M14 4.5v19" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round"/></svg>';
       R.anel = Object.assign(document.createElement("div"), { id: "clique-clover" });
       document.body.append(R.anel, R.cursor);
     }
-    return { paradas: R.paradas, altura: document.documentElement.scrollHeight, trechos: R.trechos.length, cursor: R.movs.length };
+    return { paradas: R.paradas, altura: document.documentElement.scrollHeight, trechos: R.trechos.length, cursor: R.movs.length, barra: !!barra };
   };
   window.quadroSite = function (t) {
     window.scrollTo(0, rolagemEm(t));
@@ -338,6 +501,7 @@ JS_ANIMACAO = r"""
       px.el.style.translate = `0 ${clamp(desvio, -1.2, 1.2) * r.height * -0.075}px`;
     }
     if (R.barra) R.barra.style.transform = `scaleX(${y / max})`;
+    if (R.B) quadroBarra(t);
     document.documentElement.style.setProperty("--brilho", `${-160 + ((t * 140) % 420)}%`);
     for (const g of R.gira) g.el.style.transform = `rotate(${t * g.v}deg)`;
     for (const f of R.flutua) f.el.style.transform = `translateY(${Math.sin(t * 1.6 + f.f) * f.a}px)`;
@@ -352,17 +516,22 @@ JS_ANIMACAO = r"""
     if (R.cursor) {
       const [x, y] = cursorEm(t);
       const aparece = clamp((t - R.inicio - 0.2) / 0.3);
-      let aperta = 1;
-      if (R.clique) {
-        const dc = t - R.clique.t;
-        if (dc > 0 && dc < 0.22) aperta = 0.84;
-        const ka = clamp(dc / 0.55);
-        R.anel.style.opacity = dc > 0 ? (1 - ka) * 0.9 : 0;
-        R.anel.style.transform = `translate(${R.clique.x}px, ${R.clique.y}px) scale(${0.2 + ka * 0.9})`;
-      }
+      let aperta = 1, clique = null;
+      for (const c of R.cliques) if (t >= c.t) clique = c;
+      if (clique) {
+        const dc = t - clique.t;
+        if (dc < 0.2) aperta = 0.84;
+        const ka = clamp(dc / 0.5);
+        R.anel.style.opacity = (1 - ka) * 0.9;
+        R.anel.style.transform = `translate(${clique.x}px, ${clique.y}px) scale(${0.2 + ka * 0.9})`;
+      } else R.anel.style.opacity = 0;
+      const textoC = R.texto.some((j) => t >= j.t0 && t < j.t1);
+      R.cursor.querySelector(".seta-c").style.display = textoC ? "none" : "";
+      R.cursor.querySelector(".texto-c").style.display = textoC ? "" : "none";
       R.cursor.style.opacity = aparece;
       R.cursor.style.transform = `translate(${x - 12}px, ${y - 7}px) scale(${aperta})`;
       for (const m of R.movs) {             // "hover": o botão ou cartão sobe e brilha com o cursor em cima
+        if (!m.el) continue;
         const h = rolandoEm(t) && t > m.t1 ? 0 : clamp((t - m.t1 + 0.12) / 0.2) * (1 - clamp((t - m.fimHover + 0.05) / 0.2));
         m.el.style.translate = h ? `0 ${-5 * h}px` : "";
         m.el.style.scale = h ? `${1 + 0.035 * h}` : "";
@@ -643,6 +812,124 @@ def _luxo(s: dict, img: dict) -> str:
 </section>"""
 
 
+# ---- barra lateral de vidro (efeitos de interface que o cursor usa) ------------
+CSS_BARRA = """
+body.tem-barra{padding-left:118px}
+.barra-v{position:fixed;left:18px;top:18px;bottom:18px;z-index:60;width:calc(92px + 250px * var(--abre,0));border-radius:32px;padding:16px 12px;
+  display:flex;flex-direction:column;gap:5px;font-family:var(--f-texto);color:var(--texto);
+  background:color-mix(in srgb,var(--fundo) 58%,transparent);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  border:1px solid color-mix(in srgb,var(--texto) 14%,transparent);
+  box-shadow:0 34px 70px -34px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.28)}
+.barra-v .rot{display:block;overflow:hidden;white-space:nowrap;max-width:calc(220px * var(--abre,0));opacity:var(--abre,0);font-size:18px;font-weight:600}
+.barra-v small{display:block;font-size:13px;font-weight:500;opacity:.6}
+.barra-v svg{width:27px;height:27px;flex:none}
+.bv-topo{display:flex;align-items:center;gap:calc(12px * var(--abre,0));padding:2px 0 10px calc(10px + 2px * (1 - var(--abre,0)))}
+.bv-logo{width:48px;height:48px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--destaque);color:var(--sobre-destaque);
+  font-family:var(--f-titulo);font-weight:800;font-size:22px;box-shadow:0 8px 20px -8px var(--destaque)}
+.bv-seta{position:absolute;top:26px;right:-17px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#111;
+  box-shadow:0 6px 16px -4px rgba(0,0,0,.45);transform:rotate(calc(180deg * var(--abre,0)));outline:calc(var(--h,0) * 4px) solid color-mix(in srgb,var(--destaque) 45%,transparent)}
+.bv-seta svg{width:18px;height:18px}
+.bv-busca,.bv-item,.bv-noite,.bv-perfil{position:relative;display:flex;align-items:center;gap:calc(14px * var(--abre,0));min-height:52px;border-radius:17px;
+  padding-left:calc(20.5px * (1 - var(--abre,0)) + 16px * var(--abre,0));padding-right:12px}
+.bv-busca::before,.bv-item::before,.bv-noite::before,.bv-sub a::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--texto);
+  opacity:calc(var(--h,0) * .1);pointer-events:none}
+.bv-busca{margin-bottom:4px}
+.bv-busca::after{content:"";position:absolute;inset:0;border-radius:inherit;border:1px solid color-mix(in srgb,var(--texto) 16%,transparent);opacity:var(--abre,0)}
+.bv-campo{position:relative;overflow:hidden;white-space:nowrap;max-width:calc(200px * var(--abre,0));opacity:var(--abre,0);font-size:18px;display:flex;align-items:center}
+.bv-campo .ph{opacity:.5;position:absolute;left:0}
+.bv-campo .caret{display:inline-block;width:2px;height:22px;background:var(--destaque);margin-left:2px;opacity:0}
+.bv-busca kbd{margin-left:auto;font-size:12px;opacity:calc(var(--abre,0) * .55);border:1px solid currentColor;border-radius:7px;padding:2px 6px}
+.bv-secao{position:relative;height:26px;margin:8px 0 2px;padding-left:18px;font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.bv-secao span{opacity:calc(var(--abre,0) * .55)}
+.bv-secao::before{content:"";position:absolute;left:24px;top:12px;width:20px;height:2px;border-radius:2px;background:currentColor;opacity:calc((1 - var(--abre,0)) * .3)}
+.bv-item.ativo::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--texto) 16%,transparent),color-mix(in srgb,var(--texto) 7%,transparent));
+  border:1px solid color-mix(in srgb,var(--texto) 22%,transparent);box-shadow:0 10px 22px -12px color-mix(in srgb,var(--destaque) 80%,transparent)}
+.bv-item.ativo svg{color:var(--destaque)}
+.bv-marca{position:absolute;left:40px;top:9px;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid var(--fundo);opacity:calc(1 - var(--abre,0))}
+.bv-cont{margin-left:auto;font-style:normal;font-size:13px;font-weight:700;min-width:28px;height:24px;padding:0 8px;border-radius:12px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--texto) 12%,transparent);opacity:var(--abre,0)}
+.bv-cont.vermelho{background:#ef4444;color:#fff}
+.bv-sub{position:relative;overflow:hidden;max-height:calc(150px * var(--sub,0) * var(--abre,0));opacity:var(--sub,0);margin-left:34px;padding-left:16px;
+  border-left:2px solid color-mix(in srgb,var(--texto) 14%,transparent)}
+.bv-sub a{position:relative;display:flex;align-items:center;gap:12px;height:42px;padding:0 10px;border-radius:12px;font-size:16.5px;white-space:nowrap}
+.bv-sub i{width:10px;height:10px;border-radius:50%;flex:none}
+.bv-espaco{flex:1}
+.bv-chave{position:relative;margin-left:auto;width:48px;height:28px;border-radius:14px;flex:none;opacity:var(--abre,0);
+  background:color-mix(in srgb,var(--texto) 16%,transparent)}
+.bv-chave::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--destaque);opacity:var(--noite,0)}
+.bv-chave::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  transform:translateX(calc(20px * var(--noite,0)));box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.bv-noite svg{transform:rotate(calc(-30deg * var(--noite,0)))}
+.bv-perfil{border-top:1px solid color-mix(in srgb,var(--texto) 12%,transparent);border-radius:0;padding-top:12px;margin-top:4px;min-height:64px}
+.bv-avatar{position:relative;width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--destaque) 70%,#fff),color-mix(in srgb,var(--destaque) 70%,#000))}
+.bv-avatar::after{content:"";position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#22c55e;border:2px solid var(--fundo)}
+.bv-dica{position:fixed;left:0;top:0;z-index:70;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:14px;font-family:var(--f-texto);
+  font-size:17px;font-weight:600;white-space:nowrap;color:var(--texto);opacity:0;pointer-events:none;
+  background:color-mix(in srgb,var(--fundo) 72%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid color-mix(in srgb,var(--texto) 16%,transparent);box-shadow:0 16px 34px -14px rgba(0,0,0,.5)}
+.bv-dica i{font-style:normal;font-size:13px;padding:2px 8px;border-radius:9px;background:color-mix(in srgb,var(--texto) 12%,transparent)}
+"""
+
+_ICONES_BARRA = {
+    "inicio": '<rect x="4" y="4" width="6.5" height="6.5" rx="3.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="3.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="3.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.2"/>',
+    "raio": '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
+    "cartao": '<rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="M3.5 10h17M7.5 15h4"/>',
+    "agenda": '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    "conversa": '<path d="M20 11.5a7.5 7.5 0 01-11 6.6L4.5 19.5l1.3-4.2A7.5 7.5 0 1120 11.5z"/>',
+    "busca": '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+    "lua": '<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
+    "sol": '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/>',
+    "chevron": '<path d="M9.5 6l6 6-6 6"/>',
+}
+
+
+def _ib(nome: str, largura: float = 1.9) -> str:
+    return (f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{largura}" '
+            f'stroke-linecap="round" stroke-linejoin="round">{_ICONES_BARRA[nome]}</svg>')
+
+
+def _barra_lateral(s: dict, p: dict) -> str:
+    menu = (s.get("menu") or ["Serviços", "Sobre", "Depoimentos", "Contato"])[:4]
+    menu += ["Contato"] * (4 - len(menu))
+    itens = s.get("itens") or []
+    cores_sub = ["var(--destaque)", "#22c55e", "#f59e0b"]
+    subs = "".join(f'<a><i style="background:{cores_sub[i % 3]}"></i>{_e(it["nome"])}</a>' for i, it in enumerate(itens[:3]))
+    nome = s.get("depoimento", {}).get("autor", "Ana Souza").split(",")[0].split(" ")[0][:14] or "Ana"
+    dominio = re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", s["marca"].lower()).encode("ascii", "ignore").decode())[:14] or "marca"
+    busca = (itens[0]["nome"] if itens else s["segmento"]).lower()[:16]
+    claro = not p["escuro"]
+    return f"""
+<aside class="barra-v">
+  <div class="bv-topo"><span class="bv-logo">{_e(s["marca"][:1].upper())}</span><span class="rot"><b>{_e(s["marca"])}</b><small>{_e(s.get("segmento", ""))}</small></span></div>
+  <span class="bv-seta">{_ib("chevron", 2.4)}</span>
+  <div class="bv-busca">{_ib("busca")}<span class="bv-campo"><span class="ph">Buscar…</span><span class="digitado" data-texto="{_e(busca)}"></span><i class="caret"></i></span><kbd>⌘K</kbd></div>
+  <p class="bv-secao"><span>Menu</span></p>
+  <a class="bv-item ativo">{_ib("inicio")}<span class="rot">Início</span></a>
+  <a class="bv-item">{_ib("raio")}<i class="bv-marca"></i><span class="rot">{_e(menu[0])}</span><em class="bv-cont">{len(itens[:3]) or 3}</em></a>
+  <div class="bv-sub">{subs}</div>
+  <a class="bv-item">{_ib("cartao")}<span class="rot">{_e(menu[1])}</span></a>
+  <a class="bv-item">{_ib("conversa")}<i class="bv-marca"></i><span class="rot">{_e(menu[2])}</span><em class="bv-cont vermelho">2</em></a>
+  <a class="bv-item">{_ib("agenda")}<span class="rot">{_e(menu[3])}</span></a>
+  <div class="bv-espaco"></div>
+  <div class="bv-noite">{_ib("lua" if claro else "sol")}<span class="rot">{"Modo noturno" if claro else "Modo claro"}</span><span class="bv-chave"></span></div>
+  <div class="bv-perfil"><span class="bv-avatar">{_e(nome[:1].upper())}</span><span class="rot"><b>{_e(nome)}</b><small>{_e(nome.lower())}@{_e(dominio)}.com</small></span></div>
+</aside>
+<div class="bv-dica"></div>"""
+
+
+def _tema_noturno(p: dict) -> str:
+    """Cores do modo noturno (só para sites claros), para o cursor ligar o modo noturno no vídeo."""
+    if p["escuro"]:
+        return "<script>window.TEMAS = null;</script>"
+    escuro = _misturar("#0d0c11", p["destaque"], 0.07)
+    para = {"fundo": escuro, "texto": "#f3f1f6", "superficie": _misturar(escuro, "#ffffff", 0.07),
+            "suave": _misturar("#f3f1f6", escuro, 0.42), "linha": _misturar(escuro, "#f3f1f6", 0.16)}
+    de = {k: p[k] for k in para}
+    return f"<script>window.TEMAS = {json.dumps({'de': de, 'para': para})};</script>"
+
+
 # ---- montagem final -----------------------------------------------------------
 def montar_site(s: dict, imagens: dict) -> str:
     """Devolve o HTML completo do site. `imagens` = {"hero": "img/hero.jpg", "item0": ..., "sobre0": ...}."""
@@ -667,6 +954,7 @@ def montar_site(s: dict, imagens: dict) -> str:
     else:
         corpo = (_luxo if modelo == "luxo" else _editorial)(s, imagens)
         css_modelo = CSS_LUXO if modelo == "luxo" else CSS_EDITORIAL
+    com_barra = s.get("barra", sorte % 4 != 0)   # a maioria dos sites tem a barra de vidro
     links = "".join(f"<a>{_e(x)}</a>" for x in s.get("menu", [])[:4])
     inicial = _e(s["marca"][:1].upper())
     return f"""<!doctype html>
@@ -678,13 +966,15 @@ def montar_site(s: dict, imagens: dict) -> str:
 :root{{--fundo:{p["fundo"]};--texto:{p["texto"]};--destaque:{p["destaque"]};--sobre-destaque:{p["sobre_destaque"]};
   --superficie:{p["superficie"]};--suave:{p["suave"]};--linha:{p["linha"]};
   --f-titulo:"{f_titulo}";--f-texto:"{f_texto}";--peso-titulo:{500 if serifada else 800 if modelo == "impacto" else 700};--esp-titulo:{"-0.02em" if serifada else "-0.045em"}}}
-{CSS_BASE}{css_modelo}
+{CSS_BASE}{css_modelo}{CSS_BARRA if com_barra else ""}
 </style></head>
-<body>
+<body class="{"tem-barra" if com_barra else ""}">
+{_barra_lateral(s, p) if com_barra else ""}
 <header class="nav"><a class="logo"><i>{inicial}</i>{_e(s["marca"])}</a><nav>{links}</nav>
   <a class="botao">{_e(s["botao"])}</a></header>
 {corpo}
 <footer><span class="logo" style="font-size:22px"><i>{inicial}</i>{_e(s["marca"])}</span>
   <span>{_icone("local")} {_e(s.get("cidade", ""))}</span><span>© {_e(s["marca"])} · site-conceito</span></footer>
+{_tema_noturno(p) if com_barra else ""}
 {JS_ANIMACAO}
 </body></html>"""

@@ -22,11 +22,11 @@ LARGURA, ALTURA, FPS = 1080, 1920, 30
 SITE_L, SITE_A = 1280, 800
 CENA = Path(__file__).with_name("cena.html")
 VENDOR = Path(__file__).with_name("vendor")  # three.js (licença MIT), para o notebook 3D
-DURACAO = 20.0          # duração do Reels
-INICIO_FINAL = 17.0     # quando o cartão final começa a aparecer
-INICIO_SITE = 1.1       # o site aparece junto com "O site:"
-INICIO_ROLAGEM = 3.0    # quando começa a rolar
-FIM_ROLAGEM = 16.4      # última parada antes do cartão final
+DURACAO = 15.0          # duração do Reels
+INICIO_FINAL = 12.5     # quando o cartão final começa a aparecer
+INICIO_SITE = 1.0       # o site aparece junto com "O site:"
+INICIO_ROLAGEM = 2.4    # quando começa a rolar
+FIM_ROLAGEM = 12.0      # última parada antes do cartão final
 TRANSICAO = 0.5         # duração da passagem para o cartão final
 ZOOM_MAXIMO = 0.085     # a câmera aproxima 8,5% ao longo do vídeo
 

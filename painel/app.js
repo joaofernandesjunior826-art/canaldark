@@ -478,7 +478,7 @@ function pgInstagram() {
     pedindo ? `<p class="sub" style="margin-top:12px">⏳ ${esc(ACOES_TEXTO[pedindo.acao] || "Pedido enviado")}…</p>` : "";
   const dicaFotos = !cfg.pixabay && !cfg.pexels ? `<div class="aviso-banner"><b>Dica:</b> com a chave grátis do <b>Pixabay</b>, os sites ganham fotos profissionais do segmento. Cole em <a href="#config">Configurações › Chaves da fábrica</a>.</div>` : "";
   const dicaGemini = !cfg.gemini ? `<div class="aviso-banner">Sem a chave do Gemini, a fábrica faz um Reels de exemplo (barbearia). Cole a chave em <a href="#config">Configurações</a> para ela criar sites novos.</div>` : "";
-  return topo("instagram", "Reels de 20 s: um site-conceito da Clover rolando no notebook") + dicaGemini + dicaFotos + `
+  return topo("instagram", "Reels de 15 s: um site-conceito da Clover rolando no notebook") + dicaGemini + dicaFotos + `
     <div class="cartao vidro">
       <h2>Criar um Reels</h2>
       <p class="sub" style="margin:0 0 12px">Escolha o segmento do site (ou deixe a fábrica escolher). A IA inventa a marca, os textos e as cores.</p>

@@ -31,7 +31,7 @@ UA = {"User-Agent": "clover-fabrica/1.0 (https://github.com/joaofernandesjunior8
 
 PROMPT = """Você é diretor de criação de uma agência brasileira de sites premium chamada Clover.
 Crie o conceito de um site para um negócio FICTÍCIO do segmento: "{segmento}".
-Ele vai aparecer num vídeo de 20 segundos no Instagram da Clover, rolando na tela de um notebook,
+Ele vai aparecer num vídeo de 15 segundos no Instagram da Clover, rolando na tela de um notebook,
 então precisa impressionar à primeira vista: marca forte, frases curtas, cara de site caro.
 
 Regras:

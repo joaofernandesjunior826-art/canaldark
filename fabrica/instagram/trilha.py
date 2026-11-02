@@ -87,7 +87,7 @@ def _somar(destino: list[float], som: list[float], inicio: float, ganho: float =
             destino[i0 + j] += v * ganho
 
 
-def gerar(destino: Path, dur: float = 20.0, entrada_bateria: float = 1.1, fim_bateria: float = 17.0,
+def gerar(destino: Path, dur: float = 15.0, entrada_bateria: float = 1.0, fim_bateria: float = 12.5,
           semente: int | None = None) -> Path:
     rnd = random.Random(semente)
     bpm = rnd.choice([88, 92, 96, 100])
