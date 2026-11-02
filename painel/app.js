@@ -387,6 +387,7 @@ function cartaoVideo(v, modo) {
   } else if (modo === "postar") {
     acoes = `<button class="botao pequeno" data-acao="baixar" data-id="${v.id}">${icone("baixar")}Baixar</button>
       <button class="botao pequeno" data-acao="copiar-titulo" data-id="${v.id}">${icone("copiar")}Título</button>
+      ${v.descricao ? `<button class="botao pequeno" data-acao="copiar-descricao" data-id="${v.id}">${icone("copiar")}Descrição</button>` : ""}
       <button class="botao principal pequeno" data-acao="publicado" data-id="${v.id}" ${p ? "disabled" : ""}>${icone("ok")}Já postei</button>`;
   }
   const refazer = app.abertos.has(v.id) ? `
@@ -432,6 +433,8 @@ function agendaDoDia(dia, titulo) {
     else if (v && v.status === "aprovado") {
       estado = passou ? "⚠️ passou da hora: poste assim que puder" : "pronto para postar"; classe = passou ? "falha" : "andamento";
       acoes = `<button class="botao pequeno" data-acao="baixar" data-id="${v.id}">${icone("baixar")}Baixar</button>
+        <button class="botao pequeno" data-acao="copiar-titulo" data-id="${v.id}">${icone("copiar")}Título</button>
+        ${v.descricao ? `<button class="botao pequeno" data-acao="copiar-descricao" data-id="${v.id}">${icone("copiar")}Descrição</button>` : ""}
         <button class="botao principal pequeno" data-acao="publicado" data-id="${v.id}">${icone("ok")}Já postei</button>`;
     } else if (v) {
       estado = "esperando aprovação";
@@ -724,6 +727,7 @@ document.addEventListener("click", (ev) => {
     case "baixar": baixar(id); break;
     case "copiar": copiar(alvo.dataset.texto); break;
     case "copiar-titulo": copiar(v.titulo.length + 8 <= 100 ? `${v.titulo} #Shorts` : v.titulo); break;
+    case "copiar-descricao": if (v && v.descricao) copiar(v.descricao); else avisar("Este vídeo não tem descrição.", true); break;
     case "teste": pedir("teste", {}, alvo); break;
     case "segmento": app.segmento = app.segmento === alvo.dataset.segmento ? "" : alvo.dataset.segmento; desenhar(); break;
     case "reels-surpresa": app.segmento = ""; pedir("instagram", { tema: "", ajuste: $('form[data-form="instagram"] [name="ajuste"]')?.value.trim() || "" }, alvo); break;
