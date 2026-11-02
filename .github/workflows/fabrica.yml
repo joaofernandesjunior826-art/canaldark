@@ -72,7 +72,11 @@ jobs:
       TEMA: ${{ inputs.tema }}
       AJUSTE: ${{ inputs.ajuste }}
     steps:
+      # Sempre a versão mais nova do ramo (e não a do momento do pedido): assim a fábrica vê o
+      # histórico e os pedidos já atendidos pela execução anterior.
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
 
       - uses: actions/setup-python@v6
         with:
