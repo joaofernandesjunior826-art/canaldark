@@ -353,7 +353,7 @@
   {
     "id": "20261102-032158",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Abraão e o sacrifício de Isaque",
     "referencia": "Gênesis 22",
     "titulo": "A Provação de Abraão: A Fé que Não Duvidou de Deus",
@@ -371,7 +371,8 @@
     "duracao_seg": 67,
     "postar_em": "2026-11-02T09:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T10:03:27-03:00"
   },
   {
     "id": "20261102-032532",
