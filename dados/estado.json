@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-02T12:00-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-02T13:00-03:00"
     },
     {
@@ -143,7 +139,19 @@
     "pixabay:28131",
     "pixabay:284568",
     "pixabay:365737",
-    "pixabay:70216"
+    "pixabay:70216",
+    "commons:136770842",
+    "commons:148674146",
+    "commons:15609537",
+    "commons:15609690",
+    "commons:22152078",
+    "commons:27270354",
+    "commons:57668866",
+    "commons:73650157",
+    "commons:93862189",
+    "pixabay:128273",
+    "pixabay:353078",
+    "pixabay:9451"
   ],
   "config": {
     "gemini": true,
