@@ -153,8 +153,12 @@ JS_ANIMACAO = r"""
   filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))}
 #progresso-clover{position:fixed;left:0;top:0;height:5px;width:100%;z-index:9999;transform-origin:0 50%;transform:scaleX(0);
   background:linear-gradient(90deg,var(--destaque),color-mix(in srgb,var(--destaque) 55%,#fff))}
+#rolo{perspective:1500px}
+#rolo>*{will-change:transform}
 .palavra{display:inline-block;will-change:transform,opacity}
 [data-paralaxe]{position:relative;height:118%!important;top:-9%}
+.grade,.bento,.lista-num,.rev-colunas,.numeros,.numeros-luxo,.min-numeros,.neon-numeros,.rev-numeros,.acoes,.rodape,
+.galeria,.menu-precos,.hero-visual,.rev-fotos,.min-hero,.neon-hero,.colagem,.alterna,.trilha-passos,.sobre,.cabeca{perspective:1100px}
 .botao{position:relative;overflow:hidden;isolation:isolate}
 .botao::after{content:"";position:absolute;top:-20%;bottom:-20%;width:42%;left:0;z-index:-1;pointer-events:none;
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(var(--brilho,-160%)) skewX(-18deg)}
@@ -166,11 +170,13 @@ JS_ANIMACAO = r"""
 (function () {
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const saida = (k) => 1 - Math.pow(1 - clamp(k), 3);
-  const saida4 = (k) => 1 - Math.pow(1 - clamp(k), 4);
   const suave = (k) => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+  const fluido = (k) => suave(Math.pow(clamp(k), 0.78));     // arranca macio e desacelera bem devagar
   const molinha = (k) => { k = clamp(k); const c = 1.6; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
-  const R = { revela: [], gira: [], flutua: [], letreiro: [], kb: [], conta: [], trechos: [], paradas: [0], inicio: 1.1,
-              movs: [], alvos: [], cliques: [], cursor: null, anel: null, palavras: [], paralaxe: [], barra: null,
+  const CURVAS = { suave, fluido, deriva: suave };
+  const R = { revela: [], gira: [], flutua: [], letreiro: [], kb: [], conta: [], trechos: [], paradas: [0], inicio: 1.0,
+              movs: [], cliques: [], cursor: null, anel: null, palavras: [], varre: [], paralaxe: [], barra: null,
+              blocos: [], rolo: null, girar3d: [], max: 0,
               B: null, abre: [], sub: [], noite: [], ativos: [], dicas: [], hovers: [], texto: [], digita: null, cursor0: null,
               ultimoAtivo: -1, ultimaNoite: -1, ultimaDica: null };
 
@@ -179,7 +185,7 @@ JS_ANIMACAO = r"""
     return nav && getComputedStyle(nav).position === "sticky" ? nav.offsetHeight : 0;
   }
   function paradas(maximo) {
-    const max = document.documentElement.scrollHeight - innerHeight, menu = alturaMenu();
+    const max = R.max, menu = alturaMenu();
     const ys = [0, ...[...document.querySelectorAll("[data-parada]")].map((el) =>
       Math.min(Math.max(el.getBoundingClientRect().top + scrollY - menu - (+el.dataset.parada || 0), 0), max))];
     const unicos = [...new Set(ys.map(Math.round))].sort((a, b) => a - b).filter((y, i, l) => i === 0 || y - l[i - 1] > 140);
@@ -189,14 +195,21 @@ JS_ANIMACAO = r"""
     fica.push(unicos[unicos.length - 1]);
     return [...new Set(fica)];
   }
-  // Rolagem como a roda do mouse: cada mudança de seção são duas "puxadas" que desaceleram.
+  // Quanto a página continua descendo devagar depois de chegar numa seção (nunca fica parada).
+  const deriva = (de, ate) => Math.min(R.max - de, Math.max(30, Math.min(120, ((ate ?? de + 400) - de) * 0.14)));
+
+  // Rolagem fluida: cada seção chega com um movimento longo e macio e a página segue deslizando.
   function montarRolagem(ps, ini, fim) {
     const n = Math.max(ps.length - 1, 1), passo = (fim - ini) / n, trechos = [];
-    const d1 = Math.min(0.62, passo * 0.24), d2 = Math.min(0.56, passo * 0.22), pausa = 0.1;
+    let y = ps[0];
+    trechos.push({ t0: R.inicio + 0.6, t1: ini, de: y, para: y + 0, curva: "deriva", deriva: true });
     for (let i = 1; i < ps.length; i++) {
-      const t0 = ini + (i - 1) * passo, meio = ps[i - 1] + (ps[i] - ps[i - 1]) * 0.64;
-      trechos.push({ t0, t1: t0 + d1, de: ps[i - 1], para: meio, curva: "roda" });
-      trechos.push({ t0: t0 + d1 + pausa, t1: t0 + d1 + pausa + d2, de: meio, para: ps[i], fimSecao: true, curva: "roda" });
+      const t0 = ini + (i - 1) * passo, mov = Math.min(1.35, passo * 0.5);
+      trechos.push({ t0, t1: t0 + mov, de: y, para: ps[i], curva: "fluido", fimSecao: true });
+      y = ps[i];
+      const d = deriva(y, ps[i + 1]);
+      trechos.push({ t0: t0 + mov, t1: t0 + passo, de: y, para: y + d, curva: "deriva", deriva: true });
+      y += d;
     }
     return trechos;
   }
@@ -204,11 +217,12 @@ JS_ANIMACAO = r"""
     let y = R.paradas[0] || 0;
     for (const r of R.trechos) {
       if (t >= r.t1) y = r.para;
-      else if (t > r.t0) return r.de + (r.para - r.de) * (r.curva === "suave" ? suave : saida4)((t - r.t0) / (r.t1 - r.t0));
+      else if (t > r.t0) return r.de + (r.para - r.de) * (CURVAS[r.curva] || fluido)((t - r.t0) / (r.t1 - r.t0));
       else break;
     }
     return y;
   }
+  const velocidadeEm = (t) => (rolagemEm(t + 1 / 60) - rolagemEm(t - 1 / 60)) * 30;   // px por segundo
   function valorEm(lista, t, v0) {          // linha do tempo de um valor (0 a 1) com transições suaves
     let v = v0;
     for (const s of lista) {
@@ -230,44 +244,40 @@ JS_ANIMACAO = r"""
       return { el, x: r.left, y: r.top + scrollY, w: r.width, h: r.height, botao: el.classList.contains("botao") };
     }).filter((a) => a.w > 20 && a.h > 16 && a.w < innerWidth * 0.9);
   }
-  function rolandoEm(t) { return R.trechos.some((r) => t > r.t0 - 0.05 && t < r.t1 + 0.05); }
+  function rolandoEm(t) { return R.trechos.some((r) => !r.deriva && t > r.t0 - 0.05 && t < r.t1 + 0.05); }
+  // ponto do alvo (em coordenadas da página) e o cursor "acompanha" o alvo enquanto a página desliza
+  const pontoAlvo = (a) => ({ x: a.x + a.w * (a.botao ? 0.62 : 0.55), docY: a.y + a.h * (a.botao ? 0.6 : 0.45), el: a.el });
 
-  // Cursor do mouse: em cada parada vai até um botão ou cartão e fica "em cima" dele.
-  function planejarCursor(ini, fim) {
-    const vh = innerHeight, menu = alturaMenu();
-    const seletor = ".alvo, .botao, .card, .linha-preco, .vidro-card, .flutuante, .numeros > div, .numeros-luxo > div, .galeria .g, .lista li, .pontos span";
-    const todos = [...document.querySelectorAll(seletor)].map((el) => {
-      const r = el.getBoundingClientRect();
-      return { el, x: r.left, y: r.top + scrollY, w: r.width, h: r.height, botao: el.classList.contains("botao") };
-    }).filter((a) => a.w > 20 && a.h > 16 && a.w < innerWidth * 0.9);
-    const segs = [{ ini: R.inicio + 0.75, fim: R.trechos[0] ? R.trechos[0].t0 : fim, y: R.paradas[0] }];
-    R.trechos.forEach((r, i) => {
-      if (!r.fimSecao) return;
-      const prox = R.trechos[i + 1];
-      segs.push({ ini: r.t1 + 0.05, fim: prox ? prox.t0 : fim, y: r.para });
-    });
-    let x = innerWidth * 0.72, y = vh * 0.78, usados = new Set();
+  // Cursor do mouse (sites sem a barra): em cada seção vai até um botão ou cartão.
+  function planejarCursor(fim) {
+    const vh = innerHeight, menu = alturaMenu(), todos = alvosDaPagina();
+    const movs = R.trechos.filter((r) => r.fimSecao);
+    const segs = [{ ini: R.inicio + 0.75, fim: movs[0] ? movs[0].t0 : fim, y: R.paradas[0] }];
+    movs.forEach((r, i) => segs.push({ ini: r.t1 - 0.1, fim: movs[i + 1] ? movs[i + 1].t0 : fim, y: r.para }));
+    let x = innerWidth * 0.72, y = vh * 0.78;
+    const usados = new Set();
     R.movs = [];
     segs.forEach((sg, n) => {
-      const visiveis = todos.filter((a) => a.y - sg.y > menu + 10 && a.y + a.h - sg.y < vh - 20 && !usados.has(a.el));
-      if (!visiveis.length) return;
+      const vis = todos.filter((a) => a.y - sg.y > menu + 10 && a.y + a.h - sg.y < vh - 60 && !usados.has(a.el));
+      if (!vis.length) return;
       const ultima = n === segs.length - 1;
-      visiveis.sort((a, b) => (b.botao - a.botao) * (ultima || n === 0 ? 1 : -0.3) || a.y - b.y || a.x - b.x);
-      const dur = sg.fim - sg.ini, qtd = dur > 2.3 && visiveis.length > 1 && !ultima ? 2 : 1;
+      vis.sort((a, b) => (b.botao - a.botao) * (ultima || n === 0 ? 1 : -0.3) || a.y - b.y || a.x - b.x);
+      const dur = sg.fim - sg.ini, qtd = dur > 2.2 && vis.length > 1 && !ultima ? 2 : 1;
       for (let k = 0; k < qtd; k++) {
-        const a = visiveis[k === 0 ? 0 : Math.min(visiveis.length - 1, 1 + ((n * 3) % (visiveis.length - 1 || 1)))];
+        const a = vis[k === 0 ? 0 : Math.min(vis.length - 1, 1 + ((n * 3) % (vis.length - 1 || 1)))];
         usados.add(a.el);
-        const t0 = sg.ini + k * dur / qtd, t1 = t0 + Math.min(0.7, dur / qtd * 0.45);
-        const nx = a.x + a.w * (a.botao ? 0.62 : 0.55), ny = a.y - sg.y + a.h * (a.botao ? 0.6 : 0.45);
-        R.movs.push({ t0, t1, x0: x, y0: y, x1: nx, y1: ny, el: a.el, fimHover: k + 1 < qtd ? sg.ini + (k + 1) * dur / qtd : sg.fim });
-        x = nx; y = ny;
+        const p = pontoAlvo(a), t0 = sg.ini + k * dur / qtd, t1 = t0 + Math.min(0.65, dur / qtd * 0.45);
+        R.movs.push({ t0, t1, x0: x, y0: y, x1: p.x, y1: p.docY - sg.y, docY: p.docY, seguir: true, el: a.el,
+                      fimHover: k + 1 < qtd ? sg.ini + (k + 1) * dur / qtd : sg.fim });
+        x = p.x; y = p.docY - sg.y;
       }
       if (ultima) {
         const m = R.movs[R.movs.length - 1];
-        if (m) R.cliques.push({ t: m.t1 + 0.35, x: m.x1, y: m.y1 });
+        if (m) R.cliques.push({ t: m.t1 + 0.35, seguir: m });
       }
     });
   }
+
   // ---- barra lateral de vidro: o cursor usa ela de verdade ----
   function medirBarra(b) {
     const B = { el: b, itens: [...b.querySelectorAll(".bv-item")], subs: [...b.querySelectorAll(".bv-sub a")],
@@ -289,42 +299,53 @@ JS_ANIMACAO = r"""
     const temTema = !!(window.TEMAS && window.TEMAS.para);
     const passos = [{ tipo: "heroi", y: P[0] }];
     for (let k = 1; k <= N; k++) {
-      passos.push({ tipo: k % 2 ? "clique" : "roda", de: P[k - 1], para: P[k], k });
-      passos.push({ tipo: k === N ? "final" : k === 1 ? "expandir" : (k === 2 && temTema) ? "tema" : "hover", y: P[k] });
+      passos.push({ tipo: k % 2 ? "clique" : "roda", para: P[k], k, prox: P[k + 1] });
+      passos.push({ tipo: k === N ? "final" : k === 1 ? "expandir" : (k === 2 && temTema) ? "tema" : "hover", y: P[k], prox: P[k + 1] });
     }
-    const base = { heroi: 1.2, clique: 1.6, roda: 1.1, hover: 0.95, expandir: 2.9, tema: 1.3, final: 1.1 };
+    const base = { heroi: 1.2, clique: 1.6, roda: 1.15, hover: 0.95, expandir: 2.9, tema: 1.3, final: 1.1 };
     const t0 = R.inicio + 0.25, soma = passos.reduce((a, p) => a + base[p.tipo], 0);
     const f = Math.min(1.25, (fim - t0) / soma);
-    let t = t0, x = innerWidth * 0.66, y = vh * 0.8, ativo = 0;
+    let t = t0, x = innerWidth * 0.66, y = vh * 0.8, ativo = 0, yRol = P[0];
     R.cursor0 = [x, y];
     const usados = new Set(), todos = alvosDaPagina();
-    const mover = (a, b, nx, ny, el = null, fimHover = null) => { R.movs.push({ t0: a, t1: b, x0: x, y0: y, x1: nx, y1: ny, el, fimHover: fimHover ?? b }); x = nx; y = ny; };
-    const clicar = (tc) => R.cliques.push({ t: tc, x, y });
-    const alvoPagina = (yRol, botao) => {
-      const vis = todos.filter((a) => a.y - yRol > menu + 10 && a.y + a.h - yRol < vh - 20 && !usados.has(a.el));
+    const mover = (a, b, nx, ny, extra = {}) => { R.movs.push({ t0: a, t1: b, x0: x, y0: y, x1: nx, y1: ny, el: null, fimHover: b, ...extra }); x = nx; y = ny; };
+    const clicar = (tc) => R.cliques.push({ t: tc, x, y, seguir: R.movs[R.movs.length - 1] });
+    const alvoPagina = (yv, botao) => {
+      const vis = todos.filter((a) => a.y - yv > menu + 10 && a.y + a.h - yv < vh - 60 && !usados.has(a.el));
       if (!vis.length) return null;
       vis.sort((a, b) => (b.botao - a.botao) * (botao ? 1 : -1) || a.y - b.y || a.x - b.x);
-      const a = vis[0]; usados.add(a.el);
-      return { x: a.x + a.w * (a.botao ? 0.62 : 0.55), y: a.y - yRol + a.h * (a.botao ? 0.6 : 0.45), el: a.el };
+      usados.add(vis[0].el);
+      return pontoAlvo(vis[0]);
+    };
+    const deslizar = (a, b, ate) => {                  // a página continua descendo durante a pausa
+      const d = deriva(yRol, ate);
+      R.trechos.push({ t0: a, t1: b, de: yRol, para: yRol + d, curva: "deriva", deriva: true });
+      yRol += d;
     };
     for (const p of passos) {
       const d = base[p.tipo] * f, em = (k) => t + k * d;
       if (p.tipo === "heroi" || p.tipo === "hover" || p.tipo === "final") {
-        const a = alvoPagina(p.y, p.tipo !== "hover");
-        if (a) { mover(em(0.05), em(0.48), a.x, a.y, a.el, em(1)); if (p.tipo === "final") clicar(em(0.72)); }
-      } else if (p.tipo === "clique") {             // clica no ícone da barra e a página rola até a seção
+        const a = alvoPagina(yRol, p.tipo !== "hover");
+        if (a) {
+          mover(em(0.05), em(0.48), a.x, a.docY - yRol, { el: a.el, fimHover: em(1), docY: a.docY, seguir: true });
+          if (p.tipo === "final") clicar(em(0.72));
+        }
+        if (p.tipo !== "heroi") deslizar(em(0), em(1), p.prox);
+        else R.trechos.push({ t0: em(0.3), t1: em(1), de: yRol, para: yRol, curva: "deriva", deriva: true });
+      } else if (p.tipo === "clique") {             // clica no ícone da barra e a página desliza até a seção
         const idx = Math.min(p.k, B.itens.length - 1);
         mover(em(0), em(0.3), ...B.fechada.itens[idx]);
         R.hovers.push({ el: B.itens[idx], t0: em(0.28), t1: em(0.6) });
         R.dicas.push({ alvo: B.itens[idx], t0: em(0.28), t1: em(0.6) });
-        clicar(em(0.48)); R.ativos.push({ t: em(0.48), idx }); ativo = idx;
-        R.trechos.push({ t0: em(0.5), t1: em(1), de: p.de, para: p.para, curva: "suave" });
+        clicar(em(0.46)); R.ativos.push({ t: em(0.46), idx }); ativo = idx;
+        R.trechos.push({ t0: em(0.48), t1: em(1), de: yRol, para: p.para, curva: "fluido", fimSecao: true });
+        yRol = p.para;
       } else if (p.tipo === "roda") {               // volta para a página e rola com a roda do mouse
-        mover(em(0), em(0.25), innerWidth * 0.6, vh * 0.58);
-        const meio = p.de + (p.para - p.de) * 0.64;
-        R.trechos.push({ t0: em(0.22), t1: em(0.6), de: p.de, para: meio, curva: "roda" });
-        R.trechos.push({ t0: em(0.64), t1: em(1), de: meio, para: p.para, curva: "roda", fimSecao: true });
+        mover(em(0), em(0.3), innerWidth * 0.6, vh * 0.58);
+        R.trechos.push({ t0: em(0.12), t1: em(1), de: yRol, para: p.para, curva: "fluido", fimSecao: true });
+        yRol = p.para;
       } else if (p.tipo === "expandir") {           // abre a barra, busca, abre um submenu e fecha
+        deslizar(em(0), em(1), p.prox);
         mover(em(0), em(0.1), ...B.fechada.seta);
         R.hovers.push({ el: B.seta, t0: em(0.08), t1: em(0.14) });
         clicar(em(0.12));
@@ -348,6 +369,7 @@ JS_ANIMACAO = r"""
         R.sub.push({ t0: em(0.91), t1: em(0.97), de: 1, para: 0 });
         R.ativos.push({ t: em(0.95), idx: ativo });
       } else if (p.tipo === "tema") {               // liga o modo noturno: o site inteiro escurece
+        deslizar(em(0), em(1), p.prox);
         mover(em(0), em(0.3), ...B.fechada.noite);
         R.hovers.push({ el: B.noite, t0: em(0.28), t1: em(0.62) });
         R.dicas.push({ alvo: B.noite, t0: em(0.28), t1: em(0.62) });
@@ -403,23 +425,35 @@ JS_ANIMACAO = r"""
     }
   }
 
+  // posição do cursor: segue o alvo (que desliza com a página) depois de chegar nele
+  const fimDe = (m, t) => (m.seguir && m.docY !== undefined ? [m.x1, m.docY - rolagemEm(t)] : [m.x1, m.y1]);
   function cursorEm(t) {
-    let pos = R.movs.length ? [R.movs[0].x0, R.movs[0].y0] : (R.cursor0 || [innerWidth * 0.72, innerHeight * 0.78]);
-    for (const m of R.movs) {
-      if (t >= m.t1) pos = [m.x1, m.y1];
-      else if (t > m.t0) {
-        const k = suave((t - m.t0) / (m.t1 - m.t0)), curva = Math.sin(Math.PI * k) * 0.12;
-        const dx = m.x1 - m.x0, dy = m.y1 - m.y0;
-        return [m.x0 + dx * k - dy * curva, m.y0 + dy * k + dx * curva];
-      } else break;
+    const M = R.movs;
+    if (!M.length) return R.cursor0 || [innerWidth * 0.72, innerHeight * 0.78];
+    if (t <= M[0].t0) return [M[0].x0, M[0].y0];
+    for (let i = 0; i < M.length; i++) {
+      const m = M[i], prox = M[i + 1];
+      const ini = i === 0 ? [m.x0, m.y0] : fimDe(M[i - 1], m.t0);
+      if (t < m.t1) {
+        const k = suave((t - m.t0) / (m.t1 - m.t0)), fim = fimDe(m, t), curva = Math.sin(Math.PI * k) * 0.12;
+        const dx = fim[0] - ini[0], dy = fim[1] - ini[1];
+        return [ini[0] + dx * k - dy * curva, ini[1] + dy * k + dx * curva];
+      }
+      if (!prox || t < prox.t0) return fimDe(m, t);
     }
-    return pos;
+    return fimDe(M[M.length - 1], t);
   }
 
   window.prepararSite = function (op) {
     op = op || {};
     R.inicio = op.inicio ?? 1.0;
     const ini = op.inicioRolagem ?? 2.4, fim = op.fim ?? 12.0;
+    // embrulha o conteúdo (menos menu, barra e camadas fixas) para as animações 3D da rolagem
+    R.rolo = Object.assign(document.createElement("div"), { id: "rolo" });
+    const fora = (el) => el.matches("script, style, .nav, .barra-v, .bv-dica, #cursor-clover, #clique-clover, #progresso-clover");
+    const filhos = [...document.body.children].filter((el) => !fora(el));
+    if (filhos.length) { filhos[0].before(R.rolo); R.rolo.append(...filhos); }
+    R.max = document.documentElement.scrollHeight - innerHeight;
     const barra = document.querySelector(".barra-v");
     R.paradas = paradas(barra ? 5 : Math.max(3, Math.round((fim - ini) / 2.4) + 1));
     if (barra) { R.B = medirBarra(barra); planejarComBarra(ini, fim); }
@@ -427,14 +461,14 @@ JS_ANIMACAO = r"""
     const vh = innerHeight;
     const quando = (topo) => {               // instante em que o elemento entra na tela
       if (topo < vh * 0.9) return R.inicio;
-      for (let t = 0; t < 60; t += 1 / 30) if (rolagemEm(t) + vh * 0.88 > topo) return t + 0.02;
+      for (let t = 0; t < 60; t += 1 / 30) if (rolagemEm(t) + vh * 0.9 > topo) return t + 0.02;
       return 99;
     };
     const topo = (el) => el.getBoundingClientRect().top + scrollY;
     for (const el of document.querySelectorAll('[data-revela]:not([data-revela="palavras"])'))
       R.revela.push({ el, tipo: el.dataset.revela, t0: quando(topo(el)) + (+el.dataset.atraso || 0) * 0.8,
                       dur: +el.dataset.dur || (el.dataset.revela === "linha" ? 0.7 : 0.75) });
-    // títulos que aparecem palavra por palavra
+    // palavras: títulos surgem palavra por palavra; textos longos "acendem" conforme a página rola
     for (const el of document.querySelectorAll('[data-revela="palavras"]')) {
       const andar = (no) => {
         for (const filho of [...no.childNodes]) {
@@ -450,10 +484,25 @@ JS_ANIMACAO = r"""
         }
       };
       andar(el);
-      const t0 = quando(topo(el)) + (+el.dataset.atraso || 0) * 0.8;
-      [...el.querySelectorAll(".palavra")].forEach((w, i) => R.palavras.push({ el: w, t0: t0 + i * 0.07 }));
+      const ws = [...el.querySelectorAll(".palavra")];
+      if (!/^H[1-3]$/.test(el.tagName) && ws.length >= 8) {
+        const r = el.getBoundingClientRect();
+        R.varre.push({ ws, topo: r.top + scrollY, h: r.height });
+      } else {
+        const t0 = quando(topo(el)) + (+el.dataset.atraso || 0) * 0.8;
+        ws.forEach((w, i) => R.palavras.push({ el: w, t0: t0 + i * 0.07 }));
+      }
     }
-    for (const el of document.querySelectorAll("[data-paralaxe]")) R.paralaxe.push({ el, pai: el.parentElement });
+    for (const el of document.querySelectorAll("[data-paralaxe]")) {
+      const r = el.parentElement.getBoundingClientRect();
+      R.paralaxe.push({ el, topo: r.top + scrollY, h: r.height });
+    }
+    for (const el of R.rolo.children) {
+      const r = el.getBoundingClientRect();
+      if (r.height > 30) R.blocos.push({ el, topo: r.top + scrollY, h: r.height, revela: el.hasAttribute("data-revela") });
+    }
+    for (const el of document.querySelectorAll(".hero-visual .arco, .vitrine, .neon-hero .app, .rev-fotos > div:first-child, .bento .t.alto"))
+      R.girar3d.push(el);
     R.barra = Object.assign(document.createElement("div"), { id: "progresso-clover" });
     document.body.append(R.barra);
     for (const el of document.querySelectorAll("[data-gira]")) R.gira.push({ el, v: +el.dataset.gira || 20 });
@@ -466,7 +515,7 @@ JS_ANIMACAO = r"""
       if (m) R.conta.push({ el, t0: quando(topo(el)) + 0.15, m });
     }
     if (op.cursor !== false) {
-      if (!barra) planejarCursor(ini, fim);
+      if (!barra) planejarCursor(fim);
       R.cursor = Object.assign(document.createElement("div"), { id: "cursor-clover" });
       R.cursor.innerHTML = '<svg class="seta-c" viewBox="0 0 28 28" width="54" height="54"><path d="M6 3.5v19.2l4.6-4.3 2.9 6.6 3.4-1.5-2.9-6.5h6.3z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>' +
         '<svg class="texto-c" viewBox="0 0 28 28" width="54" height="54" style="display:none"><path d="M10 4.5h8M10 23.5h8M14 4.5v19" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/><path d="M10 4.5h8M10 23.5h8M14 4.5v19" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round"/></svg>';
@@ -475,68 +524,96 @@ JS_ANIMACAO = r"""
     }
     return { paradas: R.paradas, altura: document.documentElement.scrollHeight, trechos: R.trechos.length, cursor: R.movs.length, barra: !!barra };
   };
+
   window.quadroSite = function (t) {
-    window.scrollTo(0, rolagemEm(t));
+    const y = rolagemEm(t), vh = innerHeight, centro = y + vh / 2, v = velocidadeEm(t);
+    window.scrollTo(0, y);
     for (const r of R.revela) {
       const k = (t - r.t0) / r.dur, p = saida(k), s = r.el.style;
       if (r.tipo === "linha") s.transform = `translateY(${(1 - p) * 105}%)`;
       else if (r.tipo === "zoom") { s.opacity = clamp(k * 1.6); s.transform = `scale(${0.9 + 0.1 * molinha(k)})`; }
       else if (r.tipo === "imagem") s.clipPath = `inset(${(1 - p) * 100}% 0 0 0 round var(--raio))`;
-      else if (r.tipo === "esquerda") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * -70}px)`; }
-      else if (r.tipo === "direita") { s.opacity = clamp(k * 1.5); s.transform = `translateX(${(1 - p) * 70}px)`; }
+      else if (r.tipo === "esquerda") { s.opacity = clamp(k * 1.5); s.transform = `perspective(900px) translateX(${(1 - p) * -90}px) rotateY(${(1 - p) * 24}deg)`; }
+      else if (r.tipo === "direita") { s.opacity = clamp(k * 1.5); s.transform = `perspective(900px) translateX(${(1 - p) * 90}px) rotateY(${(1 - p) * -24}deg)`; }
       else if (r.tipo === "barra") s.transform = `scaleY(${0.04 + 0.96 * p})`;
-      else if (r.tipo === "3d") { s.opacity = clamp(k * 1.6); s.transform = `perspective(900px) rotateX(${(1 - p) * 16}deg) translateY(${(1 - p) * 70}px) scale(${0.94 + 0.06 * p})`; }
-      else { s.opacity = clamp(k * 1.5); s.transform = `translateY(${(1 - p) * 46}px)`; }
+      else if (r.tipo === "3d") { s.opacity = clamp(k * 1.6); s.transform = `perspective(900px) rotateX(${(1 - p) * 34}deg) translateY(${(1 - p) * 90}px) translateZ(${(1 - p) * -160}px)`; }
+      else { s.opacity = clamp(k * 1.5); s.transform = `translateY(${(1 - p) * 50}px)`; }
+      if (r.tipo !== "linha" && r.tipo !== "barra" && r.tipo !== "imagem") s.filter = p < 1 ? `blur(${(1 - p) * 8}px)` : "";
     }
     for (const w of R.palavras) {
       const k = (t - w.t0) / 0.6, p = saida(k);
       w.el.style.opacity = clamp(k * 2);
-      w.el.style.transform = `translateY(${(1 - p) * 0.55}em) rotate(${(1 - p) * 4}deg)`;
+      w.el.style.transform = `perspective(600px) translateY(${(1 - p) * 0.55}em) rotateX(${(1 - p) * -70}deg)`;
       w.el.style.filter = p < 1 ? `blur(${(1 - p) * 6}px)` : "";
     }
-    const y = scrollY, vh = innerHeight, max = Math.max(document.documentElement.scrollHeight - vh, 1);
-    for (const px of R.paralaxe) {          // fotos andam mais devagar que a página (profundidade)
-      const r = px.pai.getBoundingClientRect();
-      const desvio = (r.top + r.height / 2 - vh / 2) / vh;
-      px.el.style.translate = `0 ${clamp(desvio, -1.2, 1.2) * r.height * -0.075}px`;
+    for (const b of R.varre) {                   // texto que acende palavra por palavra com a rolagem
+      const q = clamp((y + vh * 0.9 - b.topo) / (vh * 0.62 + b.h * 0.5)), n = b.ws.length;
+      b.ws.forEach((w, i) => { const k = clamp(q * n * 1.15 - i); w.style.opacity = 0.16 + 0.84 * k; w.style.transform = `translateY(${(1 - k) * 8}px)`; });
     }
-    if (R.barra) R.barra.style.transform = `scaleX(${y / max})`;
+    // 3D da rolagem: as seções entram inclinadas e com profundidade, e a página "dobra" com a velocidade
+    R.rolo.style.perspectiveOrigin = `50% ${centro}px`;
+    const inclina = clamp(v * 0.0032, -7, 7);
+    for (const b of R.blocos) {
+      const fimB = b.topo + b.h;
+      let ent = 0, sai = 0;
+      if (b.topo > centro) ent = clamp((b.topo - centro) / (vh * 0.55));
+      else if (fimB < centro) sai = clamp((centro - fimB) / (vh * 0.55));
+      const ang = 22 * ent - 16 * sai + inclina, z = -170 * ent - 120 * sai - Math.abs(v) * 0.02;
+      const s = b.el.style;
+      s.transformOrigin = `50% ${ent > 0 ? 0 : sai > 0 ? b.h : clamp(centro - b.topo, 0, b.h)}px`;
+      s.translate = `0 0 ${z.toFixed(1)}px`;
+      s.rotate = `x ${ang.toFixed(2)}deg`;
+      if (!b.revela) s.opacity = (1 - 0.45 * ent - 0.35 * sai).toFixed(3);
+    }
+    for (const px of R.paralaxe) {          // fotos andam mais devagar que a página e mudam de zoom
+      const desvio = (px.topo + px.h / 2 - centro) / vh;
+      px.el.style.translate = `0 ${clamp(desvio, -1.2, 1.2) * px.h * -0.08}px`;
+      px.el.style.scale = `${1 + 0.1 * clamp(Math.abs(desvio)) + clamp(Math.abs(v) * 0.00003, 0, 0.05)}`;
+    }
+    for (const el of R.girar3d) el.style.rotate = `${Math.sin(t * 0.9)} 1 0 ${(Math.sin(t * 0.7) * 9).toFixed(2)}deg`;
+    if (R.barra) R.barra.style.transform = `scaleX(${y / Math.max(R.max, 1)})`;
     if (R.B) quadroBarra(t);
     document.documentElement.style.setProperty("--brilho", `${-160 + ((t * 140) % 420)}%`);
     for (const g of R.gira) g.el.style.transform = `rotate(${t * g.v}deg)`;
     for (const f of R.flutua) f.el.style.transform = `translateY(${Math.sin(t * 1.6 + f.f) * f.a}px)`;
-    for (const l of R.letreiro) l.el.style.transform = `translateX(${-((t * l.v) % l.w)}px)`;
+    for (const l of R.letreiro) l.el.style.transform = `translateX(${-((t * l.v + y * 0.6) % l.w)}px)`;
     for (const el of R.kb) el.style.transform = `scale(${1.12 - 0.12 * saida(t / 9)})`;
     for (const c of R.conta) {
       const alvo = parseFloat(c.m[2].replace(/\./g, "").replace(",", "."));
       const casas = (c.m[2].split(",")[1] || "").length;
-      const v = alvo * saida((t - c.t0) / 1.2);
-      c.el.textContent = c.m[1] + v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + c.m[3];
+      const val = alvo * saida((t - c.t0) / 1.2);
+      c.el.textContent = c.m[1] + val.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }) + c.m[3];
     }
     if (R.cursor) {
-      const [x, y] = cursorEm(t);
+      const [x, cy] = cursorEm(t);
       const aparece = clamp((t - R.inicio - 0.2) / 0.3);
       let aperta = 1, clique = null;
       for (const c of R.cliques) if (t >= c.t) clique = c;
       if (clique) {
-        const dc = t - clique.t;
+        const dc = t - clique.t, pos = clique.seguir ? fimDe(clique.seguir, clique.t) : [clique.x, clique.y];
+        const [ax, ay] = clique.seguir && clique.seguir.seguir ? fimDe(clique.seguir, t) : pos;
         if (dc < 0.2) aperta = 0.84;
         const ka = clamp(dc / 0.5);
         R.anel.style.opacity = (1 - ka) * 0.9;
-        R.anel.style.transform = `translate(${clique.x}px, ${clique.y}px) scale(${0.2 + ka * 0.9})`;
+        R.anel.style.transform = `translate(${ax}px, ${ay}px) scale(${0.2 + ka * 0.9})`;
       } else R.anel.style.opacity = 0;
       const textoC = R.texto.some((j) => t >= j.t0 && t < j.t1);
       R.cursor.querySelector(".seta-c").style.display = textoC ? "none" : "";
       R.cursor.querySelector(".texto-c").style.display = textoC ? "" : "none";
       R.cursor.style.opacity = aparece;
-      R.cursor.style.transform = `translate(${x - 12}px, ${y - 7}px) scale(${aperta})`;
-      for (const m of R.movs) {             // "hover": o botão ou cartão sobe e brilha com o cursor em cima
+      R.cursor.style.transform = `translate(${x - 12}px, ${cy - 7}px) scale(${aperta})`;
+      for (const m of R.movs) {             // "hover" em 3D: o cartão gira na direção do cursor, sobe e brilha
         if (!m.el) continue;
         const h = rolandoEm(t) && t > m.t1 ? 0 : clamp((t - m.t1 + 0.12) / 0.2) * (1 - clamp((t - m.fimHover + 0.05) / 0.2));
-        m.el.style.translate = h ? `0 ${-5 * h}px` : "";
-        m.el.style.scale = h ? `${1 + 0.035 * h}` : "";
-        m.el.style.filter = h ? `brightness(${1 + 0.1 * h})` : "";
-        if (m.el.classList.contains("botao")) m.el.style.boxShadow = h ? `0 ${12 * h}px ${28 * h}px -10px color-mix(in srgb, var(--destaque) 80%, transparent)` : "";
+        const st = m.el.style;
+        if (!h) { st.translate = ""; st.scale = ""; st.rotate = ""; st.filter = st.filter && st.filter.startsWith("brightness") ? "" : st.filter; st.boxShadow = ""; continue; }
+        const r = m.el.getBoundingClientRect();
+        const ox = clamp((x - (r.left + r.width / 2)) / (r.width / 2), -1, 1), oy = clamp((cy - (r.top + r.height / 2)) / (r.height / 2), -1, 1);
+        st.translate = `0 ${-6 * h}px 30px`;
+        st.scale = `${1 + 0.04 * h}`;
+        st.rotate = `${(-oy).toFixed(3)} ${ox.toFixed(3)} 0 ${(12 * h * Math.min(1, Math.hypot(ox, oy) + 0.35)).toFixed(2)}deg`;
+        st.filter = `brightness(${1 + 0.1 * h})`;
+        st.boxShadow = `0 ${18 * h}px ${40 * h}px -18px rgba(0,0,0,.45)`;
       }
     }
     return true;
