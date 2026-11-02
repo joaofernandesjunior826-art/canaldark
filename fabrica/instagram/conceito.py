@@ -3,6 +3,7 @@
 """
 import json
 import random
+import re
 import time
 import unicodedata
 from pathlib import Path
@@ -48,7 +49,9 @@ Regras:
   letras gigantes), "minimal" (limpo, centralizado), "revista" (estilo jornal/revista) ou "neon"
   (escuro e tecnológico). Escolha o que combina com o segmento.
 - "imagens": buscas EM INGLÊS, de 2 a 4 palavras, por fotos reais e bonitas de banco de imagens que
-  combinem com o segmento (pessoas trabalhando, produto, ambiente). Nada de logotipo ou texto.
+  combinem com o segmento (pessoas trabalhando, produto, ambiente). Toda busca precisa ter o assunto
+  principal do segmento (ex.: salão → "hairdresser cutting hair", "hair salon interior"; nunca só
+  objetos soltos como "vases" ou "clock"). Nada de logotipo ou texto.
 - "legenda": legenda para o post do Instagram da Clover (até 500 caracteres): uma primeira linha que
   prende, 2 ou 3 frases sobre o site criado para esse segmento, diga que é um projeto conceito da
   Clover e termine com uma chamada para pedir um site (ex.: "Quer um site assim? Chama no direct").
@@ -180,36 +183,75 @@ def gerar_ficha(segmento: str, ajuste: str = "", recentes: list[str] | None = No
 
 
 # ---- fotos --------------------------------------------------------------------
-def _pixabay(busca: str, vertical: bool, usados: set) -> str | None:
+TERMOS_SEGMENTO = {
+    "barbearia": "barber barbershop beard haircut shave razor", "clinica odontologica": "dentist dental teeth tooth smile",
+    "academia": "gym fitness workout training dumbbell exercise", "imobiliaria": "house home apartment interior living real estate",
+    "pet shop": "dog cat pet puppy kitten grooming", "estetica automotiva": "car auto vehicle detailing wash",
+    "advocacia": "lawyer law justice legal office attorney", "doceria": "cake dessert pastry sweet chocolate cupcake",
+    "restaurante": "restaurant food dish dinner chef cuisine", "cafeteria": "coffee cafe espresso latte barista cappuccino",
+    "salao de beleza": "hair salon hairdresser hairstyle beauty haircut", "arquitetura": "architecture interior house building design",
+    "psicologia": "therapy therapist psychology counseling calm", "escola de idiomas": "classroom student language study teacher books",
+    "hamburgueria": "burger hamburger fries food", "joalheria": "jewelry ring necklace diamond gold jewel",
+    "clinica de estetica": "skincare skin spa beauty facial cosmetic", "contabilidade": "accounting finance office business calculator",
+    "oficina mecanica": "mechanic car garage repair engine auto", "floricultura": "flower flowers bouquet florist roses floral",
+    "personal trainer": "fitness trainer training workout gym exercise", "pousada": "hotel inn bedroom resort pool room",
+    "fotografia": "photographer camera photography photo studio", "pizzaria": "pizza pizzeria oven italian",
+    "estudio de yoga": "yoga meditation pose stretching", "nutricionista": "healthy food salad vegetables nutrition fruit",
+    "estudio de tatuagem": "tattoo tattoos ink artist", "loja de roupas": "fashion clothes clothing model boutique dress",
+    "coworking": "office workspace coworking desk laptop meeting", "energia solar": "solar panel panels energy roof",
+}
+
+
+def termos_do_segmento(segmento: str, segmento_en: str = "") -> set:
+    texto = TERMOS_SEGMENTO.get(_sem_acento(segmento), "") + " " + segmento_en
+    return {w for w in re.findall(r"[a-z]+", texto.lower()) if len(w) > 2}
+
+
+def _escolher(fotos: list, textos: list, busca: str, termos: set | None):
+    """Escolhe uma das melhores fotos: se há termos do segmento, só vale foto que fale dele."""
+    da_busca = {w for w in re.findall(r"[a-z]+", busca.lower()) if len(w) > 2}
+    notas = []
+    for i, (foto, texto) in enumerate(zip(fotos, textos)):
+        palavras = set(re.findall(r"[a-z]+", (texto or "").lower()))
+        seg = len(palavras & termos) if termos else 1
+        if seg:
+            notas.append((-(2 * seg + len(palavras & da_busca)), i, foto))
+    if not notas:
+        return None
+    notas.sort(key=lambda n: n[:2])
+    return random.choice(notas[:4])[2]
+
+
+def _pixabay(busca: str, vertical: bool, usados: set, termos: set | None = None) -> str | None:
     r = requests.get("https://pixabay.com/api/", timeout=30, params={
         "key": config.PIXABAY_API_KEY, "q": busca[:100], "image_type": "photo", "safesearch": "true",
-        "orientation": "vertical" if vertical else "horizontal", "per_page": 30, "min_width": 1000})
+        "orientation": "vertical" if vertical else "horizontal", "per_page": 50, "min_width": 1000})
     if r.status_code != 200:
         print(f"Pixabay respondeu {r.status_code} para “{busca}”.")
         return None
     fotos = [h for h in r.json().get("hits", []) if f"pixabay:{h['id']}" not in usados]
-    if not fotos:
+    foto = _escolher(fotos, [h.get("tags", "") for h in fotos], busca, termos)
+    if not foto:
         return None
-    foto = random.choice(fotos[:6])
     usados.add(f"pixabay:{foto['id']}")
     return foto.get("largeImageURL") or foto.get("webformatURL")
 
 
-def _pexels(busca: str, vertical: bool, usados: set) -> str | None:
+def _pexels(busca: str, vertical: bool, usados: set, termos: set | None = None) -> str | None:
     r = requests.get("https://api.pexels.com/v1/search", timeout=30, headers={"Authorization": config.PEXELS_API_KEY},
                      params={"query": busca[:100], "orientation": "portrait" if vertical else "landscape", "per_page": 20})
     if r.status_code != 200:
         print(f"Pexels respondeu {r.status_code} para “{busca}”.")
         return None
     fotos = [f for f in r.json().get("photos", []) if f"pexels:{f['id']}" not in usados]
-    if not fotos:
+    foto = _escolher(fotos, [f.get("alt", "") for f in fotos], busca, termos)
+    if not foto:
         return None
-    foto = random.choice(fotos[:6])
     usados.add(f"pexels:{foto['id']}")
     return foto["src"].get("large2x") or foto["src"].get("large")
 
 
-def _openverse(busca: str, vertical: bool, usados: set) -> str | None:
+def _openverse(busca: str, vertical: bool, usados: set, termos: set | None = None) -> str | None:
     """Fotos de bancos com licença livre (StockSnap, Nappy, Rawpixel), sem precisar de chave."""
     r = requests.get("https://api.openverse.org/v1/images/", timeout=(6, 15), headers=UA, params={
         "q": busca[:100], "license": "cc0,pdm", "source": "stocksnap,nappy,rawpixel", "page_size": 20,
@@ -218,9 +260,10 @@ def _openverse(busca: str, vertical: bool, usados: set) -> str | None:
         raise requests.RequestException(f"Openverse respondeu {r.status_code}")
     fotos = [f for f in r.json().get("results", []) if f.get("url") and f"ov:{f['id']}" not in usados
              and (f.get("width") or 0) >= 900]
-    if not fotos:
+    textos = [" ".join([f.get("title") or ""] + [t.get("name", "") for t in f.get("tags") or []]) for f in fotos]
+    foto = _escolher(fotos, textos, busca, termos)
+    if not foto:
         return None
-    foto = random.choice(fotos[:5])
     usados.add(f"ov:{foto['id']}")
     return foto["url"]
 
@@ -251,15 +294,18 @@ def baixar_imagens(ficha: dict, pasta: Path, segmento_en: str = "") -> dict:
     fontes.append(("Openverse", _openverse))
     usados, saida, origem, fora = set(), {}, {}, set()
     limite = time.time() + 150  # no máximo 2,5 minutos procurando fotos
+    termos = termos_do_segmento(ficha.get("segmento", ""), segmento_en) or None
     for vaga, busca, vertical in vagas:
-        reservas = [busca, " ".join(busca.split()[:2]), segmento_en or busca.split()[0]]
+        # primeiro só fotos que falam do segmento; no fim, qualquer foto da busca
+        reservas = [(busca, termos), (" ".join(busca.split()[:2]), termos), (segmento_en, termos),
+                    (f"{segmento_en} {busca.split()[0] if busca.split() else ''}".strip(), termos), (busca, None)]
         for nome, fonte in fontes:
             if nome in fora or time.time() > limite:
                 continue
             url = None
-            for termo in dict.fromkeys(t for t in reservas if t):
+            for termo, filtro in dict.fromkeys((t, frozenset(f) if f else None) for t, f in reservas if t):
                 try:
-                    url = fonte(termo, vertical, usados)
+                    url = fonte(termo, vertical, usados, set(filtro) if filtro else None)
                 except (requests.RequestException, ValueError, KeyError) as e:
                     print(f"{nome} não respondeu ({str(e)[:120]}); sigo sem ele.")
                     fora.add(nome)  # banco fora do ar: não insiste nas outras fotos
