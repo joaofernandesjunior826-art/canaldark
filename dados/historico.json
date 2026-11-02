@@ -266,7 +266,7 @@
   {
     "id": "20261102-015457",
     "tipo": "extra",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "O chamado de Abraão",
     "referencia": "Gênesis 12",
     "titulo": "O Chamado de Abraão: A Coragem de Deixar Tudo",
@@ -284,6 +284,7 @@
     "duracao_seg": 60,
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T02:20:37-03:00"
+    "aprovado_em": "2026-11-02T02:20:37-03:00",
+    "publicado_em": "2026-11-02T02:21:42-03:00"
   }
 ]
