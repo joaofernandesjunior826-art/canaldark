@@ -107,8 +107,14 @@ quiser (ex.: "tema escuro, cores verde e dourado") e toque em **Criar Reels**. E
 vídeo aparece em **Prontos para postar**, com a legenda pronta para copiar.
 
 O vídeo (1080x1920, 20 s): a frase "Cliente: “quero um site” / O site:", um notebook escuro em 3D com
-a luz roxa da Clover, o site-conceito rolando na tela com animações, e o final com a marca Clover,
-"Seu site pode ser assim", o botão e o @ do Instagram. A trilha lo-fi é gerada na hora (sem direitos
+a luz roxa da Clover, o site-conceito rolando na tela e o final com a marca Clover, "Seu site pode ser
+assim", o botão e o @ do Instagram. No site: cursor do mouse passeando e clicando, rolagem como a roda
+do mouse, títulos que aparecem palavra por palavra, cartões em 3D, fotos com paralaxe, contadores,
+brilho nos botões e barra de progresso.
+
+**6 modelos de site, em rodízio** (um Reels nunca repete o modelo dos últimos): editorial, luxo
+(escuro), impacto (cores fortes e letras gigantes), minimal, revista e neon (tecnológico). Cada um tem a
+sua família de fontes; o Gemini escolhe cores, textos e a marca fictícia. A trilha lo-fi é gerada na hora (sem direitos
 autorais); no Instagram você pode trocar por uma música em alta.
 
 Os mesmos 8 passos do GitHub fazem o Reels:
