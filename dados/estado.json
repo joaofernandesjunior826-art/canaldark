@@ -1,5 +1,18 @@
 {
-  "fila": [],
+  "fila": [
+    {
+      "tipo": "novo",
+      "horario": "2026-11-03T21:15-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-03T22:00-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-03T23:00-03:00"
+    }
+  ],
   "falhas": {
     "data": "",
     "n": 0
@@ -382,7 +395,19 @@
     "pixabay:114068",
     "pixabay:257263",
     "pixabay:45635",
-    "pixabay:87253"
+    "pixabay:87253",
+    "commons:108536023",
+    "commons:113183824",
+    "commons:113183877",
+    "commons:116859870",
+    "commons:187003284",
+    "commons:60271924",
+    "commons:80931435",
+    "commons:97545901",
+    "pixabay:117628",
+    "pixabay:204006",
+    "pixabay:2119",
+    "pixabay:213837"
   ],
   "config": {
     "gemini": true,
