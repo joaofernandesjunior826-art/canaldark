@@ -553,7 +553,7 @@
   {
     "id": "20261102-035132",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Moisés salvo das águas do Nilo",
     "referencia": "Êxodo 2:1-10",
     "titulo": "O Bebê no Rio Nilo: O Livramento Incrível de Moisés",
@@ -573,7 +573,8 @@
     "postar_em": "2026-11-02T19:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T11:02:04-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00",
+    "publicado_em": "2026-11-03T12:18:40-03:00"
   },
   {
     "id": "20261102-093342",
@@ -1034,7 +1035,7 @@
   {
     "id": "20261103-121429",
     "tipo": "instagram",
-    "status": "aguardando",
+    "status": "publicado",
     "segmento": "Pizzaria",
     "marca": "Nonna Mia",
     "titulo": "Nonna Mia · Pizzaria",
@@ -1043,6 +1044,7 @@
     "data": "2026-11-03T12:16:22-03:00",
     "duracao_seg": 15,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "publicado_em": "2026-11-03T12:18:40-03:00"
   }
 ]
