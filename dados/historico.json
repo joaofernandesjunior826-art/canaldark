@@ -404,7 +404,7 @@
   {
     "id": "20261102-032924",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Jacó engana Isaque e recebe a bênção",
     "referencia": "Gênesis 27",
     "titulo": "O Engano de Jacó: A Bênção Roubada que Mudou o Destino",
@@ -423,7 +423,8 @@
     "postar_em": "2026-11-02T12:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:38:37-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00",
+    "publicado_em": "2026-11-02T21:41:19-03:00"
   },
   {
     "id": "20261102-033238",
