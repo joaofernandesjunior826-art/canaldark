@@ -290,7 +290,7 @@
   {
     "id": "20261102-022214",
     "tipo": "instagram",
-    "status": "aguardando",
+    "status": "publicado",
     "segmento": "Advocacia",
     "marca": "Vérice Advogados",
     "titulo": "Vérice Advogados · Advocacia",
@@ -299,7 +299,8 @@
     "data": "2026-11-02T02:25:05-03:00",
     "duracao_seg": 15,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "publicado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-030327",
@@ -373,7 +374,7 @@
     "previa": true,
     "telegram": [],
     "aprovado_em": "2026-11-02T10:03:27-03:00",
-    "publicado_em": "2026-11-02T21:34:38-03:00"
+    "publicado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-032532",
@@ -397,7 +398,7 @@
     "postar_em": "2026-11-02T11:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:34:38-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-032924",
@@ -421,12 +422,12 @@
     "postar_em": "2026-11-02T12:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:34:38-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-033238",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A escada de Jacó",
     "referencia": "Gênesis 28:10-22",
     "titulo": "O Sonho de Jacó: A Escada que Conectou a Terra ao Céu",
@@ -444,12 +445,13 @@
     "duracao_seg": 69,
     "postar_em": "2026-11-02T13:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-033635",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Jacó luta com Deus",
     "referencia": "Gênesis 32",
     "titulo": "O Homem que Lutou com Deus até o Amanhecer",
@@ -467,7 +469,8 @@
     "duracao_seg": 67,
     "postar_em": "2026-11-02T14:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T21:38:37-03:00"
   },
   {
     "id": "20261102-034104",
