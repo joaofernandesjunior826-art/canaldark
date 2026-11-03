@@ -1,10 +1,5 @@
 {
-  "fila": [
-    {
-      "tipo": "novo",
-      "horario": "2026-11-03T23:00-03:00"
-    }
-  ],
+  "fila": [],
   "falhas": {
     "data": "",
     "n": 0
@@ -423,7 +418,19 @@
     "pixabay:131615",
     "pixabay:2142",
     "pixabay:278750",
-    "pixabay:326898"
+    "pixabay:326898",
+    "commons:147990",
+    "commons:159889522",
+    "commons:19341068",
+    "commons:199438961",
+    "commons:199439482",
+    "commons:40142895",
+    "commons:45565615",
+    "commons:68251481",
+    "pixabay:242513",
+    "pixabay:27539",
+    "pixabay:382584",
+    "pixabay:8884"
   ],
   "config": {
     "gemini": true,
