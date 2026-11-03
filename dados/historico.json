@@ -655,7 +655,7 @@
   {
     "id": "20261102-094640",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A abertura do Mar Vermelho",
     "referencia": "Êxodo 14",
     "titulo": "O Dia em que o Impossível Aconteceu no Mar",
@@ -672,12 +672,13 @@
     "duracao_seg": 68,
     "postar_em": "2026-11-02T23:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:23:46-03:00"
   },
   {
     "id": "20261102-203803",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "O maná do céu",
     "referencia": "Êxodo 16",
     "titulo": "O Alimento Misterioso que Caiu do Céu no Deserto",
@@ -695,12 +696,13 @@
     "duracao_seg": 64,
     "postar_em": "2026-11-03T06:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:23:46-03:00"
   },
   {
     "id": "20261102-204112",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Os Dez Mandamentos",
     "referencia": "Êxodo 19-20",
     "titulo": "O Dia em que o Monte Sinai Tremeu: Os Dez Mandamentos",
@@ -718,7 +720,8 @@
     "duracao_seg": 63,
     "postar_em": "2026-11-03T08:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:23:46-03:00"
   },
   {
     "id": "20261102-204526",
@@ -746,7 +749,7 @@
   {
     "id": "20261102-204844",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A serpente de bronze",
     "referencia": "Números 21",
     "titulo": "Um Olhar Podia Salvar Suas Vidas no Deserto",
@@ -764,7 +767,8 @@
     "duracao_seg": 61,
     "postar_em": "2026-11-03T11:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:23:46-03:00"
   },
   {
     "id": "20261102-205213",
@@ -1120,6 +1124,29 @@
     "data": "2026-11-03T18:24:23-03:00",
     "duracao_seg": 61,
     "postar_em": "2026-11-04T09:30-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261103-202346",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Davi e Bate-Seba",
+    "referencia": "2 Samuel 11-12",
+    "titulo": "O Grave Erro do Rei Davi e o Perdão de Deus",
+    "descricao": "A história de como o rei Davi caiu em tentação com Bate-Seba e o confronto com o profeta Natã. Descubra o poder do arrependimento sincero em 2 Samuel 11-12. #Shorts #Bíblia #Davi #HistóriasBíblicas",
+    "tags": [
+      "Davi",
+      "Bate-Seba",
+      "Profeta Nata",
+      "2 Samuel",
+      "Biblia",
+      "Historias da Biblia",
+      "Arrependimento"
+    ],
+    "data": "2026-11-03T20:28:02-03:00",
+    "duracao_seg": 69,
+    "postar_em": "2026-11-04T11:00-03:00",
     "previa": true,
     "telegram": []
   }
