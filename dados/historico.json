@@ -579,7 +579,7 @@
   {
     "id": "20261102-093342",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A sarça ardente",
     "referencia": "Êxodo 3",
     "titulo": "Por que esta planta pegava fogo e não virava cinzas?",
@@ -597,12 +597,13 @@
     "duracao_seg": 69,
     "postar_em": "2026-11-02T20:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T12:18:56-03:00"
   },
   {
     "id": "20261102-093823",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "As dez pragas do Egito",
     "referencia": "Êxodo 7-11",
     "titulo": "As Dez Pragas que Abalaram o Império do Faraó",
@@ -621,7 +622,8 @@
     "duracao_seg": 70,
     "postar_em": "2026-11-02T21:15-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T12:18:56-03:00"
   },
   {
     "id": "20261102-094248",
