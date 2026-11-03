@@ -579,7 +579,7 @@
   {
     "id": "20261102-093342",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "A sarça ardente",
     "referencia": "Êxodo 3",
     "titulo": "Por que esta planta pegava fogo e não virava cinzas?",
@@ -598,7 +598,8 @@
     "postar_em": "2026-11-02T20:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T12:18:56-03:00"
+    "aprovado_em": "2026-11-03T12:18:56-03:00",
+    "publicado_em": "2026-11-03T12:20:06-03:00"
   },
   {
     "id": "20261102-093823",
