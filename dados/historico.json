@@ -726,7 +726,7 @@
   {
     "id": "20261102-204526",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "O bezerro de ouro",
     "referencia": "Êxodo 32",
     "titulo": "O Povo Esqueceu Deus e Adorou uma Estátua de Ouro",
@@ -744,7 +744,8 @@
     "duracao_seg": 65,
     "postar_em": "2026-11-03T09:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:28:25-03:00"
   },
   {
     "id": "20261102-204844",
@@ -773,7 +774,7 @@
   {
     "id": "20261102-205213",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "A jumenta de Balaão",
     "referencia": "Números 22",
     "titulo": "O Dia em que uma Jumenta Falou para Salvar um Profeta",
@@ -791,7 +792,8 @@
     "duracao_seg": 61,
     "postar_em": "2026-11-03T12:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T20:28:25-03:00"
   },
   {
     "id": "20261102-213438",
@@ -1147,6 +1149,28 @@
     "data": "2026-11-03T20:28:02-03:00",
     "duracao_seg": 69,
     "postar_em": "2026-11-04T11:00-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261103-202825",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "A sabedoria de Salomão e as duas mães",
+    "referencia": "1 Reis 3:16-28",
+    "titulo": "Como o rei resolveu a briga pelo bebê?",
+    "descricao": "Duas mulheres disputavam a mesma criança e o rei Salomão deu uma ordem surpreendente que revelou a verdade. Veja em Primeiro Reis, capítulo três. #Shorts #Bíblia #Salomão #HistóriasDaBíblia",
+    "tags": [
+      "Salomão",
+      "Sabedoria de Salomão",
+      "Bíblia",
+      "Histórias da Bíblia",
+      "Reis",
+      "Antigo Testamento"
+    ],
+    "data": "2026-11-03T20:36:03-03:00",
+    "duracao_seg": 62,
+    "postar_em": "2026-11-04T12:00-03:00",
     "previa": true,
     "telegram": []
   }
