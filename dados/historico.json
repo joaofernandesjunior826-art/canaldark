@@ -972,7 +972,7 @@
   {
     "id": "20261103-110928",
     "tipo": "instagram",
-    "status": "aguardando",
+    "status": "publicado",
     "segmento": "Cafeteria",
     "marca": "Aroma & Grão",
     "titulo": "Aroma & Grão · Cafeteria",
@@ -981,7 +981,8 @@
     "data": "2026-11-03T11:13:02-03:00",
     "duracao_seg": 15,
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "publicado_em": "2026-11-03T12:16:41-03:00"
   },
   {
     "id": "20261103-111326",
