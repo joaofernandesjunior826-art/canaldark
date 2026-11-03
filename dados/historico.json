@@ -353,7 +353,7 @@
   {
     "id": "20261102-032158",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Abraão e o sacrifício de Isaque",
     "referencia": "Gênesis 22",
     "titulo": "A Provação de Abraão: A Fé que Não Duvidou de Deus",
@@ -372,12 +372,13 @@
     "postar_em": "2026-11-02T09:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T10:03:27-03:00"
+    "aprovado_em": "2026-11-02T10:03:27-03:00",
+    "publicado_em": "2026-11-02T21:34:38-03:00"
   },
   {
     "id": "20261102-032532",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Esaú vende o direito de primogenitura",
     "referencia": "Gênesis 25",
     "titulo": "O Prato de Lentilhas que Custou uma Herança Sagrada",
@@ -395,12 +396,13 @@
     "duracao_seg": 69,
     "postar_em": "2026-11-02T11:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T21:34:38-03:00"
   },
   {
     "id": "20261102-032924",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Jacó engana Isaque e recebe a bênção",
     "referencia": "Gênesis 27",
     "titulo": "O Engano de Jacó: A Bênção Roubada que Mudou o Destino",
@@ -418,7 +420,8 @@
     "duracao_seg": 64,
     "postar_em": "2026-11-02T12:00-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-02T21:34:38-03:00"
   },
   {
     "id": "20261102-033238",
@@ -763,6 +766,30 @@
     "data": "2026-11-02T20:55:11-03:00",
     "duracao_seg": 61,
     "postar_em": "2026-11-03T12:00-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261102-213438",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Raabe e os espias",
+    "referencia": "Josué 2",
+    "titulo": "O Cordão Vermelho que Salvou uma Família da Destruição",
+    "descricao": "Conheça a impressionante história de Raabe e os dois espias em Jericó. Sua coragem e fé salvaram toda a sua família da destruição. Acompanhe esta narrativa bíblica em Josué capítulo dois. #Shorts #Bíblia #HistóriasBíblicas #Fé",
+    "tags": [
+      "Raabe",
+      "Jerico",
+      "Josue 2",
+      "Espias",
+      "Cordao Escarlate",
+      "Historias da Biblia",
+      "Fe",
+      "Biblia Sagrada"
+    ],
+    "data": "2026-11-02T21:38:11-03:00",
+    "duracao_seg": 69,
+    "postar_em": "2026-11-03T13:00-03:00",
     "previa": true,
     "telegram": []
   }
