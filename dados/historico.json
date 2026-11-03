@@ -429,7 +429,7 @@
   {
     "id": "20261102-033238",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "A escada de Jacó",
     "referencia": "Gênesis 28:10-22",
     "titulo": "O Sonho de Jacó: A Escada que Conectou a Terra ao Céu",
@@ -448,12 +448,13 @@
     "postar_em": "2026-11-02T13:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:38:37-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00",
+    "publicado_em": "2026-11-02T21:52:39-03:00"
   },
   {
     "id": "20261102-033635",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Jacó luta com Deus",
     "referencia": "Gênesis 32",
     "titulo": "O Homem que Lutou com Deus até o Amanhecer",
@@ -472,7 +473,8 @@
     "postar_em": "2026-11-02T14:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:38:37-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00",
+    "publicado_em": "2026-11-02T21:52:39-03:00"
   },
   {
     "id": "20261102-034104",
