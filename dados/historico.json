@@ -604,7 +604,7 @@
   {
     "id": "20261102-093823",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "As dez pragas do Egito",
     "referencia": "Êxodo 7-11",
     "titulo": "As Dez Pragas que Abalaram o Império do Faraó",
@@ -624,7 +624,8 @@
     "postar_em": "2026-11-02T21:15-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T12:18:56-03:00"
+    "aprovado_em": "2026-11-03T12:18:56-03:00",
+    "publicado_em": "2026-11-03T13:46:54-03:00"
   },
   {
     "id": "20261102-094248",
