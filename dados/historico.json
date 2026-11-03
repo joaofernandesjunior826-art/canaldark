@@ -498,7 +498,7 @@
     "postar_em": "2026-11-02T16:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T10:58:37-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00"
   },
   {
     "id": "20261102-034445",
@@ -522,7 +522,7 @@
     "postar_em": "2026-11-02T17:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T10:58:37-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00"
   },
   {
     "id": "20261102-034751",
@@ -545,12 +545,12 @@
     "postar_em": "2026-11-02T18:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T10:58:37-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00"
   },
   {
     "id": "20261102-035132",
     "tipo": "novo",
-    "status": "aguardando",
+    "status": "aprovado",
     "historia": "Moisés salvo das águas do Nilo",
     "referencia": "Êxodo 2:1-10",
     "titulo": "O Bebê no Rio Nilo: O Livramento Incrível de Moisés",
@@ -569,7 +569,8 @@
     "duracao_seg": 60,
     "postar_em": "2026-11-02T19:30-03:00",
     "previa": true,
-    "telegram": []
+    "telegram": [],
+    "aprovado_em": "2026-11-03T11:02:04-03:00"
   },
   {
     "id": "20261102-093342",
@@ -939,6 +940,29 @@
     "data": "2026-11-03T11:01:38-03:00",
     "duracao_seg": 68,
     "postar_em": "2026-11-03T20:30-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261103-110204",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "Deus chama o menino Samuel",
+    "referencia": "1 Samuel 3",
+    "titulo": "Quem chamou o menino Samuel no meio da noite?",
+    "descricao": "Na calada da noite, uma voz chama pelo menino Samuel dentro do templo. Descubra como Deus revelou Seus planos ao jovem profeta em Primeira Samuel, capítulo três. #Shorts #Bíblia #Samuel #Deus",
+    "tags": [
+      "Samuel",
+      "profeta",
+      "templo",
+      "Eli",
+      "voz de Deus",
+      "Primeiro Samuel",
+      "historias da biblia"
+    ],
+    "data": "2026-11-03T11:09:00-03:00",
+    "duracao_seg": 71,
+    "postar_em": "2026-11-03T21:15-03:00",
     "previa": true,
     "telegram": []
   }
