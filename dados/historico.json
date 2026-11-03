@@ -379,7 +379,7 @@
   {
     "id": "20261102-032532",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "Esaú vende o direito de primogenitura",
     "referencia": "Gênesis 25",
     "titulo": "O Prato de Lentilhas que Custou uma Herança Sagrada",
@@ -398,7 +398,8 @@
     "postar_em": "2026-11-02T11:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-02T21:38:37-03:00"
+    "aprovado_em": "2026-11-02T21:38:37-03:00",
+    "publicado_em": "2026-11-02T21:41:02-03:00"
   },
   {
     "id": "20261102-032924",
