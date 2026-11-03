@@ -479,7 +479,7 @@
   {
     "id": "20261102-034104",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "José vendido pelos irmãos",
     "referencia": "Gênesis 37",
     "titulo": "A Inveja Cruel dos Irmãos de José e o Preço da Traição",
@@ -498,12 +498,13 @@
     "postar_em": "2026-11-02T16:00-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T11:02:04-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00",
+    "publicado_em": "2026-11-03T11:09:28-03:00"
   },
   {
     "id": "20261102-034445",
     "tipo": "novo",
-    "status": "aprovado",
+    "status": "publicado",
     "historia": "José interpreta os sonhos do faraó",
     "referencia": "Gênesis 41",
     "titulo": "Do Cativeiro ao Trono: José Interpreta os Sonhos do Faraó",
@@ -522,7 +523,8 @@
     "postar_em": "2026-11-02T17:30-03:00",
     "previa": true,
     "telegram": [],
-    "aprovado_em": "2026-11-03T11:02:04-03:00"
+    "aprovado_em": "2026-11-03T11:02:04-03:00",
+    "publicado_em": "2026-11-03T11:09:28-03:00"
   },
   {
     "id": "20261102-034751",
@@ -963,6 +965,20 @@
     "data": "2026-11-03T11:09:00-03:00",
     "duracao_seg": 71,
     "postar_em": "2026-11-03T21:15-03:00",
+    "previa": true,
+    "telegram": []
+  },
+  {
+    "id": "20261103-110928",
+    "tipo": "instagram",
+    "status": "aguardando",
+    "segmento": "Cafeteria",
+    "marca": "Aroma & Grão",
+    "titulo": "Aroma & Grão · Cafeteria",
+    "legenda": "O aroma do café perfeito agora tem um site à altura. ☕ Desenvolvemos este projeto conceito para cafeterias que valorizam a estética e a experiência do cliente desde o primeiro clique. Na Clover, criamos sites que transmitem a essência da sua marca e encantam os clientes. Quer um site assim para o seu negócio? Chama no direct.\n\n#criacaodesites #webdesign #designerdeartes #cafeteriaespecial #barista #cafeartesanal #sitesexclusivos #agenciadigital #uxui #branding",
+    "modelo": "luxo",
+    "data": "2026-11-03T11:13:02-03:00",
+    "duracao_seg": 15,
     "previa": true,
     "telegram": []
   }
