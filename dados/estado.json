@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-04T19:30-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-04T20:30-03:00"
     },
     {
@@ -23,6 +19,22 @@
     {
       "tipo": "novo",
       "horario": "2026-11-05T06:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T08:00-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T09:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T11:00-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T12:00-03:00"
     }
   ],
   "falhas": {
@@ -564,7 +576,19 @@
     "commons:67449477",
     "pixabay:244839",
     "pixabay:336916",
-    "pixabay:4071"
+    "pixabay:4071",
+    "commons:50661805",
+    "commons:56204315",
+    "commons:81487639",
+    "commons:81644999",
+    "commons:83934614",
+    "commons:84818357",
+    "commons:89899053",
+    "pixabay:127252",
+    "pixabay:225252",
+    "pixabay:25780",
+    "pixabay:275593",
+    "pixabay:358693"
   ],
   "config": {
     "gemini": true,
