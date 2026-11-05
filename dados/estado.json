@@ -1,23 +1,32 @@
 {
-  "fila": [],
+  "fila": [
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T14:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T16:00-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T17:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T18:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-05T19:30-03:00"
+    }
+  ],
   "falhas": {
     "data": "2026-11-04",
     "n": 2,
     "quando": "2026-11-04T21:46:07-03:00"
   },
   "clipes_usados": [
-    "commons:124705537",
-    "commons:62585201",
-    "commons:62587989",
-    "commons:62604854",
-    "commons:83507004",
-    "commons:85558515",
-    "commons:92098698",
-    "pixabay:128663",
-    "pixabay:1917",
-    "pixabay:198488",
-    "pixabay:31180",
-    "pixabay:7686",
     "commons:155083",
     "commons:176801532",
     "commons:18841826",
@@ -605,7 +614,19 @@
     "pixabay:19368",
     "pixabay:205011",
     "pixabay:210030",
-    "pixabay:223459"
+    "pixabay:223459",
+    "commons:163094062",
+    "commons:164240547",
+    "commons:21792456",
+    "commons:23611213",
+    "commons:57364453",
+    "commons:67158500",
+    "commons:67158506",
+    "commons:67189294",
+    "pixabay:12027",
+    "pixabay:223848",
+    "pixabay:370958",
+    "pixabay:383538"
   ],
   "config": {
     "gemini": true,
@@ -637,7 +658,7 @@
     "instagram_arroba": "@_clover.sd_"
   },
   "gemini_esgotado": {
-    "gemini-3.8-flash": "2026-11-04"
+    "gemini-3.6-flash": "2026-11-05"
   },
   "ultima_falha": {
     "estacao": "2 Roteiro",
