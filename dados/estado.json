@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-12T06:30-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-12T08:00-03:00"
     },
     {
@@ -27,18 +23,6 @@
     "quando": "2026-11-09T16:10:54-03:00"
   },
   "clipes_usados": [
-    "commons:199991873",
-    "commons:3065379",
-    "commons:33657572",
-    "commons:58316946",
-    "commons:76000647",
-    "commons:95260706",
-    "pixabay:143419",
-    "pixabay:202864",
-    "pixabay:204006",
-    "pixabay:241802",
-    "pixabay:43459",
-    "pixabay:73550",
     "commons:15398198",
     "commons:164476505",
     "commons:21984717",
@@ -626,7 +610,19 @@
     "pixabay:251262",
     "pixabay:284566",
     "pixabay:331030",
-    "pixabay:51842"
+    "pixabay:51842",
+    "commons:113224634",
+    "commons:156360196",
+    "commons:15815736",
+    "commons:160199",
+    "commons:32503580",
+    "commons:43133939",
+    "commons:77967763",
+    "pixabay:141519",
+    "pixabay:199788",
+    "pixabay:225775",
+    "pixabay:275983",
+    "pixabay:57647"
   ],
   "config": {
     "gemini": true,
