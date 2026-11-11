@@ -3828,5 +3828,28 @@
     "postar_em": "2026-11-12T09:30-03:00",
     "previa": true,
     "telegram": []
+  },
+  {
+    "id": "20261111-201342",
+    "tipo": "novo",
+    "status": "aguardando",
+    "historia": "A morte de Saul",
+    "referencia": "1 Samuel 31",
+    "titulo": "O trágico fim do primeiro rei de Israel",
+    "descricao": "Conheça as últimas horas do rei Saul na dramática batalha do monte Gilboa contra os filisteus. Uma narrativa intensa e fiel ao relato de 1 Samuel 31. #Bíblia #Shorts #HistóriasDaBíblia #ReiSaul",
+    "tags": [
+      "morte de saul",
+      "rei saul",
+      "1 samuel 31",
+      "monte gilboa",
+      "jonatas",
+      "filisteus",
+      "historias da biblia"
+    ],
+    "data": "2026-11-11T20:18:34-03:00",
+    "duracao_seg": 67,
+    "postar_em": "2026-11-12T11:00-03:00",
+    "previa": true,
+    "telegram": []
   }
 ]
