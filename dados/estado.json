@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-11T18:30-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-11T19:30-03:00"
     }
   ],
@@ -15,18 +11,6 @@
     "quando": "2026-11-09T16:10:54-03:00"
   },
   "clipes_usados": [
-    "commons:149477",
-    "commons:19059032",
-    "commons:196729973",
-    "commons:20570903",
-    "commons:22001976",
-    "commons:49419478",
-    "commons:90374758",
-    "pixabay:16138",
-    "pixabay:184734",
-    "pixabay:2266",
-    "pixabay:43015",
-    "pixabay:51853",
     "commons:135253285",
     "commons:15398382",
     "commons:15465253",
@@ -614,7 +598,19 @@
     "pixabay:249280",
     "pixabay:2496",
     "pixabay:270940",
-    "pixabay:274538"
+    "pixabay:274538",
+    "commons:112310990",
+    "commons:146139877",
+    "commons:15397542",
+    "commons:155880793",
+    "commons:157651216",
+    "commons:162687519",
+    "commons:22301323",
+    "commons:5977657",
+    "pixabay:111281",
+    "pixabay:129034",
+    "pixabay:90",
+    "pixabay:94821"
   ],
   "config": {
     "gemini": true,
@@ -646,7 +642,8 @@
     "instagram_arroba": "@_clover.sd_"
   },
   "gemini_esgotado": {
-    "gemini-3.6-flash": "2026-11-11"
+    "gemini-3.6-flash": "2026-11-11",
+    "gemini-3.8-flash": "2026-11-11"
   },
   "ultima_falha": {
     "estacao": "2 Roteiro",
