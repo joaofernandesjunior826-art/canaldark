@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-14T09:30-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-14T11:00-03:00"
     },
     {
@@ -19,18 +15,6 @@
     "quando": "2026-11-12T23:11:20-03:00"
   },
   "clipes_usados": [
-    "commons:59675759",
-    "pixabay:203923",
-    "pixabay:8016",
-    "commons:139785051",
-    "commons:164673963",
-    "commons:199726871",
-    "commons:200660455",
-    "commons:68250454",
-    "commons:8183527",
-    "commons:84749704",
-    "commons:84763079",
-    "commons:85397267",
     "pixabay:15450",
     "pixabay:348471",
     "pixabay:367684",
@@ -618,7 +602,19 @@
     "pixabay:111279",
     "pixabay:12687",
     "pixabay:21782",
-    "pixabay:384849"
+    "pixabay:384849",
+    "commons:83925948",
+    "commons:84750907",
+    "commons:84776028",
+    "commons:85890710",
+    "commons:86162905",
+    "pixabay:120303",
+    "pixabay:158075",
+    "pixabay:172545",
+    "pixabay:186195",
+    "pixabay:343478",
+    "pixabay:365737",
+    "pixabay:46347"
   ],
   "config": {
     "gemini": true,
@@ -650,8 +646,7 @@
     "instagram_arroba": "@_clover.sd_"
   },
   "gemini_esgotado": {
-    "gemini-3.8-flash": "2026-11-12",
-    "gemini-flash-latest": "2026-11-12"
+    "gemini-3.8-flash": "2026-11-13"
   },
   "ultima_falha": {
     "estacao": "3 Narração",
