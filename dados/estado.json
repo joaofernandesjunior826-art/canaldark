@@ -2,10 +2,6 @@
   "fila": [
     {
       "tipo": "novo",
-      "horario": "2026-11-13T12:00-03:00"
-    },
-    {
-      "tipo": "novo",
       "horario": "2026-11-13T13:00-03:00"
     },
     {
@@ -15,8 +11,8 @@
   ],
   "falhas": {
     "data": "2026-11-12",
-    "n": 2,
-    "quando": "2026-11-12T18:34:02-03:00"
+    "n": 3,
+    "quando": "2026-11-12T23:11:20-03:00"
   },
   "clipes_usados": [
     "commons:10851154",
@@ -654,8 +650,8 @@
     "gemini-flash-latest": "2026-11-12"
   },
   "ultima_falha": {
-    "estacao": "2 Roteiro",
-    "quando": "2026-11-12T18:34:02-03:00",
+    "estacao": "3 Narração",
+    "quando": "2026-11-12T23:11:20-03:00",
     "tipo": "novo"
   }
 }
