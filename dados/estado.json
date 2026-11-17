@@ -1,9 +1,30 @@
 {
-  "fila": [],
+  "fila": [
+    {
+      "tipo": "novo",
+      "horario": "2026-11-17T19:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-17T20:30-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-17T21:15-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-17T22:00-03:00"
+    },
+    {
+      "tipo": "novo",
+      "horario": "2026-11-17T23:00-03:00"
+    }
+  ],
   "falhas": {
-    "data": "2026-11-12",
-    "n": 3,
-    "quando": "2026-11-12T23:11:20-03:00"
+    "data": "2026-11-17",
+    "n": 1,
+    "quando": "2026-11-17T11:45:06-03:00"
   },
   "clipes_usados": [
     "commons:160275",
@@ -640,8 +661,8 @@
     "gemini-3.8-flash": "2026-11-17"
   },
   "ultima_falha": {
-    "estacao": "3 Narração",
-    "quando": "2026-11-12T23:11:20-03:00",
+    "estacao": "2 Roteiro",
+    "quando": "2026-11-17T11:45:06-03:00",
     "tipo": "novo"
   }
 }
